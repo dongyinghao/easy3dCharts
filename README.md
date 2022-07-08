@@ -6,7 +6,8 @@
 ### 5、增加标题
 ### 6、移入添加横纵标线
 ### 7、增加类型块
-### 7、增加刻度
+### 8、增加刻度
+### 9、支持多对象渲染
 
 
 - [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar)
