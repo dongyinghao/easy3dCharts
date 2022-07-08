@@ -8,18 +8,47 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
+const data = [
+  {
+    value: 2,
+    label: '小明'
+  },
+  {
+    value: 7,
+    label: '小李'
+  },
+  {
+    value: 5,
+    label: '小张莫阿紫'
+  },
+  {
+    value: 9,
+    label: '小兰'
+  },
+  {
+    value: 10,
+    label: '小毛子'
+  }
+]
+const barWidth = 3;
+const barDepth = 3;
+const axisWidth = 10;
+const axisDepth = 0.4;
+const axisLengthX = 100;
+const axisLengthY = 50;
+const axisPadding = 5;
 const clock = new THREE.Clock();
 let t = 0;
 let scene:any = null;
 const initScene = () => {
   scene = new THREE.Scene();
-  scene.background = new THREE.Color( 0x333333 );
+  scene.background = new THREE.Color( 0x111111 );
 };
 
 let camera:any = null;
 const initCamera = () => {
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 500);
-  camera.position.set(10, 55, 100);
+  camera.position.set(4, 35, 60);
   camera.lookAt(new THREE.Vector3(0, 0, 0));
 };
 
@@ -27,66 +56,114 @@ const axisHelper = () => {
   scene.add(new THREE.AxesHelper(5000));
 };
 
+const initLight = () => {
+  const light = new THREE.DirectionalLight( 0xffffff);
+  light.position.set( 0, 0, 1 );
+  // light.angle = Math.PI / 4;
+  light.castShadow = true;
+  scene.add(new THREE.AmbientLight( 0xdddddd ), light);
+};
+
 let renderer:any = null;
 const initRenderer = () => {
   renderer = new THREE.WebGLRenderer({ alpha: true, antialias:true });
+  renderer.shadowMap.enabled = true;
   renderer.setSize(window.innerWidth, window.innerHeight);
   let canvas = document.getElementsByTagName('canvas');
   if (canvas.length) document.body.removeChild(canvas[0]);
   document.body.appendChild(renderer.domElement);
 };
 
-const createText = (text:string) => {
+const createText = (data={
+  font: '无',
+  size: 1,
+  height: 2,
+  color: '#ffffff',
+  y: 0,
+  x: 0,
+  z: 0,
+  rotate: 0,
+}) => {
   const loader = new FontLoader();
-  loader.load( '/fonts/FangSong_Regular.json', font => {
-    const textGeo:any = new TextGeometry( text, {
-      font: font,
-      size: 14,
-      height: 5,
+  loader.load( '/fonts/FangSong_Regular.json', fonts => {
+    const {font, size, height, x, y, z, rotate, color} = data;
+    const textGeo:any = new TextGeometry( font, {
+      font: fonts,
+      size,
+      height,
       curveSegments: 1,
       bevelThickness: 1,
     } );
     textGeo.computeBoundingBox();
-    const centerOffset = - 0.5 * ( textGeo.boundingBox.max.x - textGeo.boundingBox.min.x );
-    const textMaterial = new THREE.MeshNormalMaterial( { flatShading: THREE.FlatShading} );
+    const textMaterial = new THREE.MeshLambertMaterial({ color });
     const mesh = new THREE.Mesh( textGeo, textMaterial );
-    mesh.position.x = centerOffset;
-    mesh.position.y = 20;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
+    mesh.position.x = x;
+    mesh.position.y = y;
+    mesh.position.z = z;
+    mesh.rotateX(rotate);
+    // 获取字体的外轮廓，从而得到字体的长度
+    let box= new THREE.Box3().setFromObject(mesh);
+    // 字体对齐方式默认为左对齐，此处设为中心对齐
+    mesh.translateX(-(box.max.x - box.min.x) / 2);
     scene.add( mesh );
   });
 }
 
 let cube:any = null;
-const initCube = () => {
-  const geometry = new THREE.BoxGeometry(5, 5, 5);
-  const material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
-  const morphPositions = (geometry.attributes.position.array as []).map(it => it * 0.5);
-  const morphAttribute = new THREE.Float32BufferAttribute(morphPositions, 3);
-  morphAttribute.name = 'halfBox';
-  geometry.morphAttributes.position = [morphAttribute];
-  geometry.morphTargetsRelative = true;
-  geometry.computeBoundingSphere();
-  cube = new THREE.Mesh(geometry, material);
-  // let grid:any = new THREE.GridHelper( 50, 10, 0x000000, 0xffffff );
-  // grid.position.y = 5;
-  // grid.material.opacity = 0.9;
-  // grid.material.transparent = true;
-  // scene.add(cube, grid);
-  scene.add(cube);
+const initBar = () => {
+  const material = new THREE.MeshLambertMaterial({ color: '#1495a1' });
+  data.forEach((it, i) => {
+    const geometry = new THREE.BoxGeometry(barWidth, it.value, barDepth);
+    cube = new THREE.Mesh(geometry, material);
+    cube.castShadow = true;
+    // cube.receiveShadow = true;
+    cube.position.x = (axisLengthX - 2 * axisPadding) / (data.length - 1) * i + axisPadding - 50;
+    cube.translateY(it.value / 2);
+    scene.add(cube);
+    //  X轴文字
+    createText({
+      font: it.label,
+      size: 1.5,
+      height: 0.1,
+      x: cube.position.x,
+      y: 1,
+      z: 5,
+      color: '#ffffff',
+      rotate: -Math.PI / 2
+    })
+    //  柱顶文字
+    createText({
+      font: it.value.toString(),
+      size: 2,
+      height: 0.3,
+      x: cube.position.x,
+      y: it.value + 1,
+      z: 0,
+      color: '#ff0000',
+      rotate: 0
+    })
+  });
 };
+
+// 绘制x轴
 const initaxisX = () => {
-  const geometry = new THREE.BoxGeometry(100, 1, 5);
-  const material = new THREE.MeshBasicMaterial({ color: 0x999999 });
+  const geometry = new THREE.BoxGeometry(axisLengthX, axisDepth, axisWidth);
+  const material = new THREE.MeshLambertMaterial({ color: 0x999999 });
   cube = new THREE.Mesh(geometry, material);
+  cube.castShadow = true;
+  cube.receiveShadow = true;
   scene.add(cube);
 };
-  const initaxisY = () => {
-  const geometry = new THREE.BoxGeometry(1, 50, 5);
-  const material = new THREE.MeshBasicMaterial({ color: 0x999999 });
+
+// 绘制x轴
+const initaxisY = () => {
+  const geometry = new THREE.BoxGeometry(axisDepth, axisLengthY, axisWidth);
+  const material = new THREE.MeshLambertMaterial({ color: 0x999999 });
   cube = new THREE.Mesh(geometry, material);
-  cube.position
+  cube.castShadow = true;
+  cube.receiveShadow = true;
+  cube.position.x = -50;
+  cube.position.y = 24.8;
   scene.add(cube);
 };
 
@@ -114,16 +191,16 @@ const initControls = () => {
 const init = () => {
   initScene();
   initRenderer();
+  initLight();
   initCamera();
-  axisHelper();
+  // axisHelper();
   initControls();
 };
 
 init();
-initaxisX();
-initaxisY();
-initCube();
-createText('柱状图');
+// initaxisX();
+// initaxisY();
+initBar();
 animate();
 </script>
 
