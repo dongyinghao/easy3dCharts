@@ -19,7 +19,7 @@ const options = {
   titleSize: 5,
   titlePosition: 'center',
   cellPaddingX: 10, // 单元X方向两边空隙
-  cellPaddingZ: 10, // 单元Z方向两边空隙
+  cellPaddingZ: 6, // 单元Z方向两边空隙
   cellWidth: 5, // 柱子X轴长度
   cellDepth: 5, // 柱子Z轴长度
   series: [
@@ -169,6 +169,10 @@ const initControls = () => {
   controls.update();
   controls.autoRotate = false;
   controls.addEventListener('change',() => {
+    // console.log(camera.position);
+    // console.log(charts.position.z);
+    // console.log(camera.position.z);
+    // console.log(controls.getAzimuthalAngle());
     renderer.render(scene, camera);
   })
 };
@@ -201,9 +205,8 @@ const initBar = (data:any) => {
       mesh.position.x = (cellPaddingX + cellWidth) * i + cellPaddingX + cellWidth / 2;
       mesh.position.z = (cellPaddingZ + cellDepth) * idx + cellPaddingZ + cellDepth / 2;
       mesh.translateY(it.value / 2);
-      mesh.userData.name = it.label;
       mesh.userData.type = 'bar';
-      mesh.userData.data = it;
+      mesh.userData.data = {...it, name: item.name};
       charts.add(mesh);
       //  柱顶文字
       createText({
@@ -342,8 +345,14 @@ const animate = (event?:any) => {
         // 已经有选中的物体(当在已选中的物体上移动鼠标，会持续触发该方法)
         if(interSected){
           if(interSected != it.object){
-            tipsRef.value.style.display = 'none'
+            // 原选择物颜色恢复
             interSected.material.color.setHex(interSected.currentHex);
+            // 重新定义选择物
+            interSected = it.object;
+            const {label, name, value} = interSected.userData.data;
+            tips.value = name + '<br>' + label + ':' + value
+            interSected.currentHex = interSected.material.color.getHex();
+            interSected.material.color.set(0xff0000);
           } else {
             tipsRef.value.style.left = event.clientX + 12 + 'px';
             tipsRef.value.style.top = event.clientY + 12 + 'px';
@@ -353,10 +362,10 @@ const animate = (event?:any) => {
           tipsRef.value.style.left = event.clientX + 12 + 'px';
           tipsRef.value.style.top = event.clientY + 12 + 'px';
           interSected = it.object;
-          tips.value = '分数' + '<br>' + interSected.userData.data.label + ':' + interSected.userData.data.value
+          const {label, name, value} = interSected.userData.data;
+          tips.value = name + '<br>' + label + ':' + value
           interSected.currentHex = interSected.material.color.getHex();
           interSected.material.color.set(0xff0000);
-
         }
       } else {
         if (interSected) {
@@ -367,7 +376,7 @@ const animate = (event?:any) => {
       }
       return it.object.userData.type === 'bar';
     })
-  }else{
+  } else {
     tipsRef.value.style.display = 'none'
     if(interSected){
       interSected.material.color.set(interSected.currentHex);
