@@ -1,16 +1,18 @@
 <template>
   <div class="container" ref="containerRef"></div>
-  <div class="tips" ref="tipsRef" v-html="tips"></div>
+  <Tips :tips="tips" ref="tipsRef" />
 </template>
 
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
 import {
-  BufferGeometry, Group, Scene, Color, PerspectiveCamera, AxesHelper, Raycaster, MeshLambertMaterial, Line, Mesh,
-  LineBasicMaterial, DirectionalLight, AmbientLight, WebGLRenderer, Vector3, Vector2, BoxGeometry, BufferAttribute
+  Group, Scene, Color, PerspectiveCamera, AxesHelper, Raycaster, MeshLambertMaterial, Mesh, Box3, DirectionalLight,
+  AmbientLight, WebGLRenderer, Vector3, Vector2, BoxGeometry
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { createText, findStepY, findRange, initLabelZ } from '@/utils/dpm.js';
+import { createText, findStepY, findRange, initLabelZ, drawLine, initLabelX } from '@/utils/dpm';
+import { ChartConfig } from '@/utils/type';
+import Tips from '@/components/Tips.vue';
 
 
 const options = {
@@ -114,7 +116,12 @@ let tipsRef:any = ref()
 let containerRef:any = ref()
 // 提示文案
 let tips = ref<string>('')
-// 配置信息
+// X轴显示位置
+let sideFlagX = ref<boolean>(false);
+// Y轴显示位置
+let sideFlagY = ref<boolean>(false);
+// Z轴显示位置
+let sideFlagZ = ref<boolean>(false);
 
 let axisLengthY = 0;
 // 全局变量
@@ -162,21 +169,6 @@ const initRenderer = () => {
   containerRef.value.appendChild(renderer.domElement);
 };
 
-// 鼠标控制器
-const initControls = () => {
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.target = new Vector3(40,45,0);
-  controls.update();
-  controls.autoRotate = false;
-  controls.addEventListener('change',() => {
-    // console.log(camera.position);
-    // console.log(charts.position.z);
-    // console.log(camera.position.z);
-    // console.log(controls.getAzimuthalAngle());
-    renderer.render(scene, camera);
-  })
-};
-
 // 移入、点击事件
 const initEvent = () => {
   raycaster = new Raycaster();
@@ -217,53 +209,33 @@ const initBar = (data:any) => {
         y: it.value + 1,
         z: mesh.position.z,
         color: '#ff0000',
-      }, charts);
+      }, (text:any) => {
+        charts.add(text);
+      });
     })
   });
 };
 
-// 绘制X轴网格
+// 绘制X轴网格,顺时针绘制
 const initGridX = (data:any) => {
-  const material = new LineBasicMaterial( {color: 0xffffff} );
-  const {cellPaddingZ = 10, cellPaddingX = 10, cellDepth = 5, series, cellWidth = 5} = data;
-  for(let i = 0; i<=series[0].data.length + 1; i++) {
-    const geometry = new BufferGeometry();
-    let x = 0;
-    switch (i) {
-      case 0:
-        x = 0;
-        break;
-      case series[0].data.length + 1:
-        x = (cellPaddingX + cellWidth) * (i - 1) + cellPaddingX;
-        break;
-      default:
-        x = (cellPaddingX + cellWidth) * (i - 1) + cellPaddingX + cellWidth / 2
-    }
-    const z = (cellPaddingZ + cellDepth) * series.length + cellPaddingZ;
-    const vertice = new Float32Array( [x, 0, z, x, 0, 0, x, axisLengthY, 0] );
-    geometry.setAttribute( 'position', new BufferAttribute( vertice, 3 ) );
-    const line = new Line( geometry, material );
-    line.userData.type = 'lineX'
-    charts.add(line);
-  }
-}
-
-// 绘制Y轴网格,顺时针绘制
-const initGridY = (data:any) => {
   const {cellPaddingZ = 10, cellPaddingX = 10, series, cellDepth = 5, cellWidth = 5} = data;
   const step = findStepY(findRange(options.series));
   const len = Math.floor(axisLengthY / step);
-  const material = new LineBasicMaterial( { color: 0xffffff } );
+  const x = (cellWidth + cellPaddingX) * (series[0].data.length) + cellPaddingX;
+  const gridX_left = new Group();
+  gridX_left.name = 'gridX_left';
+  const gridX_right = new Group();
+  gridX_right.name = 'gridX_right';
+  charts.add(gridX_left, gridX_right)
   for(let i = 0;i <= len;i++) {
-    const geometry = new BufferGeometry();
-    const x = (cellWidth + cellPaddingX) * (series[0].data.length) + cellPaddingX;
     const y = step * i;
     const z = (cellPaddingZ + cellDepth) * series.length + cellPaddingZ;
-    const vertice = new Float32Array( [0,y,z,0,y,0, x,y,0] );
-    geometry.setAttribute( 'position', new BufferAttribute( vertice, 3 ) );
-    const line = new Line( geometry, material );
-    line.userData.type = 'lineY'
-    charts.add(line);
+    const lineHX_left = drawLine([0,y,z, 0,y,0]);
+    const lineHX_right = drawLine([x,y,z, x,y,0]);
+    lineHX_left.userData.type = 'lineHX'
+    lineHX_right.userData.type = 'lineHX'
+    gridX_left.add(lineHX_left);
+    gridX_right.add(lineHX_right);
     // 绘制y轴坐标值
     createText({
       font: (step * i).toString(),
@@ -273,16 +245,39 @@ const initGridY = (data:any) => {
       x: -2,
       y: step * i - 1,
       z: (cellPaddingZ + cellDepth) * series.length + cellPaddingZ + 1,
-    }, charts)
+    },(mesh:any) => {
+      charts.add(mesh);
+    });
   }
+  for(let i = 0; i <= series.length + 1; i++) {
+    let z = 0;
+    if (i === 0) {
+      z = 0;
+    } else if (i === series.length + 1) {
+      z = (cellPaddingZ + cellDepth) * (i - 1) + cellPaddingZ;
+    } else {
+      z = (cellPaddingZ + cellDepth) * (i - 1) + cellPaddingZ + cellDepth / 2
+    }
+    const lineVX_left = drawLine([0, axisLengthY, z, 0, 0, z]);
+    const lineVX_right = drawLine([x, axisLengthY, z, x, 0, z]);
+    lineVX_left.userData.type = 'lineVX'
+    lineVX_right.userData.type = 'lineVX'
+    gridX_left.add(lineVX_left);
+    gridX_right.add(lineVX_right);
+  }
+  gridX_right.visible = false;
 }
 
-// 绘制Z轴网格
-const initGridZ = (data:any) => {
+// 绘制Y轴网格
+const initGridY = (data:any) => {
   const {cellPaddingZ = 10, cellPaddingX = 10, series, cellDepth = 5, cellWidth = 5} = data;
-  const material = new LineBasicMaterial( {color: 0xffffff} );
+  const gridY_bottom = new Group();
+  gridY_bottom.name = 'gridY_bottom';
+  const gridY_top = new Group();
+  gridY_top.name = 'gridY_top';
+  gridY_top.visible = false;
+  charts.add(gridY_bottom, gridY_top)
   for(let i = 0; i <= series.length + 1; i++) {
-    const geometry = new BufferGeometry();
     let z = 0;
     switch (i) {
       case 0:
@@ -295,11 +290,77 @@ const initGridZ = (data:any) => {
         z = (cellPaddingZ + cellDepth) * (i - 1) + cellPaddingZ + cellDepth / 2
     }
     const x = (cellWidth + cellPaddingX) * series[0].data.length + cellPaddingX;
-    const vertice = new Float32Array( [0, axisLengthY, z, 0, 0, z, x, 0, z] );
-    geometry.setAttribute( 'position', new BufferAttribute( vertice, 3 ) );
-    const line = new Line( geometry, material );
-    line.userData.type = 'lineZ'
-    charts.add(line);
+    const lineVY_bottom = drawLine([0, 0, z, x, 0, z]);
+    const lineVY_top = drawLine([0, axisLengthY, z, x, axisLengthY, z]);
+    lineVY_bottom.userData.type = 'lineVY'
+    lineVY_top.userData.type = 'lineVY'
+    gridY_bottom.add(lineVY_bottom);
+    gridY_top.add(lineVY_top);
+  }
+  for(let i = 0; i<=series[0].data.length + 1; i++) {
+    let x = 0;
+    switch (i) {
+      case 0:
+        x = 0;
+        break;
+      case series[0].data.length + 1:
+        x = (cellPaddingX + cellWidth) * (i - 1) + cellPaddingX;
+        break;
+      default:
+        x = (cellPaddingX + cellWidth) * (i - 1) + cellPaddingX + cellWidth / 2
+    }
+    const z = (cellPaddingZ + cellDepth) * series.length + cellPaddingZ;
+    const lineHY_bottom = drawLine([x, 0, z, x, 0, 0]);
+    lineHY_bottom.userData.type = 'lineHY'
+    gridY_bottom.add(lineHY_bottom);
+    const lineHY_top = drawLine([x, axisLengthY, z, x, axisLengthY, 0]);
+    lineHY_top.userData.type = 'lineHY'
+    gridY_top.add(lineHY_top);
+  }
+}
+
+// 绘制Z轴网格
+const initGridZ = (data:any) => {
+  const {cellPaddingZ = 10, cellPaddingX = 10, cellDepth = 5, series, cellWidth = 5} = data;
+  const gridZ_front = new Group();
+  gridZ_front.name = 'gridZ_front';
+  gridZ_front.visible = false;
+  const gridZ_back = new Group();
+  gridZ_back.name = 'gridZ_back';
+  charts.add(gridZ_front, gridZ_back)
+  const z = (cellPaddingZ + cellDepth) * series.length + cellPaddingZ;
+  for(let i = 0; i<=series[0].data.length + 1; i++) {
+    let x = 0;
+    switch (i) {
+      case 0:
+        x = 0;
+        break;
+      case series[0].data.length + 1:
+        x = (cellPaddingX + cellWidth) * (i - 1) + cellPaddingX;
+        break;
+      default:
+        x = (cellPaddingX + cellWidth) * (i - 1) + cellPaddingX + cellWidth / 2
+    }
+    const lineVZ_front = drawLine([x, 0, z, x, axisLengthY, z]);
+    lineVZ_front.userData.type = 'lineVZ'
+    gridZ_front.add(lineVZ_front);
+
+    const lineVZ_back = drawLine([x, 0, 0, x, axisLengthY, 0]);
+    lineVZ_back.userData.type = 'lineVZ'
+    gridZ_back.add(lineVZ_back);
+  }
+
+  const step = findStepY(findRange(options.series));
+  const len = Math.floor(axisLengthY / step);
+  for(let i = 0;i <= len;i++) {
+    const x = (cellWidth + cellPaddingX) * (series[0].data.length) + cellPaddingX;
+    const y = step * i;
+    const lineHZ_back = drawLine([0,y,0, x,y,0]);
+    lineHZ_back.userData.type = 'lineHZ'
+    gridZ_back.add(lineHZ_back);
+    const lineHZ_front = drawLine([0,y,z, x,y,z]);
+    lineHZ_front.userData.type = 'lineHZ'
+    gridZ_front.add(lineHZ_front);
   }
 }
 
@@ -313,24 +374,8 @@ const initTitle = (data:any) => {
     x: ((cellWidth + cellPaddingX) * (data.series[0].data.length) + cellPaddingX) / 2,
     y: axisLengthY + 6,
     color: '#00a6ff',
-  }, charts)
-}
-
-// 绘制X轴标签
-const initLabelX = (data:any) => {
-  const {cellPaddingZ = 10, cellPaddingX = 10, series, cellDepth = 5, cellWidth = 5} = data;
-  const itemData = series[0].data
-  itemData.forEach((it:any, i:number) => {
-    let x = (cellPaddingX + cellWidth) * i + cellPaddingX + cellWidth / 2;
-    createText({
-      font: it.label,
-      size: 3,
-      height: 0.3,
-      x,
-      z: (cellPaddingZ + cellDepth) * series.length + cellPaddingZ + 5,
-      color: '#1495a1',
-      rotate: -Math.PI / 2
-    }, charts)
+  }, (mesh:any) => {
+    charts.add(mesh);
   })
 }
 
@@ -338,6 +383,7 @@ const animate = (event?:any) => {
   renderer.render(scene, camera);
   raycaster.setFromCamera(mouse, camera);
   let intersects = raycaster.intersectObject(charts);
+  const tipsEl = tipsRef.value.$el
   if(intersects.length > 0){
     // 此处使用some是因为选中状态的元素只允许有一个
     intersects.some((it:any) => {
@@ -354,13 +400,13 @@ const animate = (event?:any) => {
             interSected.currentHex = interSected.material.color.getHex();
             interSected.material.color.set(0xff0000);
           } else {
-            tipsRef.value.style.left = event.clientX + 12 + 'px';
-            tipsRef.value.style.top = event.clientY + 12 + 'px';
+            tipsEl.style.left = event.clientX + 12 + 'px';
+            tipsEl.style.top = event.clientY + 12 + 'px';
           }
         } else {
-          tipsRef.value.style.display = 'block'
-          tipsRef.value.style.left = event.clientX + 12 + 'px';
-          tipsRef.value.style.top = event.clientY + 12 + 'px';
+          tipsEl.style.display = 'block'
+          tipsEl.style.left = event.clientX + 12 + 'px';
+          tipsEl.style.top = event.clientY + 12 + 'px';
           interSected = it.object;
           const {label, name, value} = interSected.userData.data;
           tips.value = name + '<br>' + label + ':' + value
@@ -369,7 +415,7 @@ const animate = (event?:any) => {
         }
       } else {
         if (interSected) {
-          tipsRef.value.style.display = 'none'
+          tipsEl.style.display = 'none'
           interSected.material.color.setHex(interSected.currentHex);
           interSected = null;
         }
@@ -377,7 +423,7 @@ const animate = (event?:any) => {
       return it.object.userData.type === 'bar';
     })
   } else {
-    tipsRef.value.style.display = 'none'
+    tipsEl.style.display = 'none'
     if(interSected){
       interSected.material.color.set(interSected.currentHex);
     }
@@ -385,8 +431,55 @@ const animate = (event?:any) => {
   }
 }
 
+// 鼠标控制器
+const initControls = () => {
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.target = new Vector3(40,45,0);
+  controls.update();
+  controls.autoRotate = false;
+  controls.addEventListener('change',() => {
+    let box = new Box3().setFromObject(charts);
+    if (sideFlagX.value !== camera.position.x < box.min.x + 20) {
+      charts.children.forEach((it:any) => {
+        if (it.name === 'gridX_right') it.visible = !sideFlagX.value
+        if (it.name === 'gridX_left') it.visible = sideFlagX.value
+      })
+    }
+    sideFlagX.value = camera.position.x < box.min.x + 20;
+
+    if (sideFlagY.value !== camera.position.y < box.min.y + 20) {
+      charts.children.forEach((it:any) => {
+        if (it.name === 'gridY_top') it.visible = !sideFlagY.value
+        if (it.name === 'gridY_bottom') it.visible = sideFlagY.value
+      })
+    }
+    sideFlagY.value = camera.position.y < box.min.y + 20;
+
+    if (sideFlagZ.value !== camera.position.z < box.min.z + 20) {
+      charts.children.forEach((it:any) => {
+        if (it.name === 'gridZ_front') it.visible = !sideFlagZ.value
+        if (it.name === 'gridZ_back') it.visible = sideFlagZ.value
+      })
+    }
+    sideFlagZ.value = camera.position.z < box.min.z + 20;
+    renderer.render(scene, camera);
+  })
+};
+
+// 绘图
+const drawChart = (options:ChartConfig) => {
+  initBar(options);
+  initTitle(options);
+  initGridX(options);
+  initGridY(options);
+  initGridZ(options);
+  initLabelX(options, charts);
+  initLabelZ(options, charts);
+};
+
 // 初始化
 const init = () => {
+  // 初始化场景
   initScene();
   initRenderer();
   initLight();
@@ -394,15 +487,11 @@ const init = () => {
   initEvent();
   initControls();
   // axisHelper();
-  initBar(options);
-  initTitle(options);
-  initGridX(options);
-  initGridY(options);
-  initGridZ(options);
-  initLabelX(options);
-  initLabelZ(options, charts);
-  renderer.render(scene, camera);
+
+  // drawGridBySize('0xffffff',options.series[0].data.length * (options.cellPaddingX + options.cellWidth) + options.cellPaddingX, 100, 7, 10, options.cellPaddingX + options.cellWidth / 2, 0);
+  drawChart(options)
   scene.add(charts);
+  renderer.render(scene, camera);
 };
 
 onMounted(() => {
@@ -420,15 +509,5 @@ onMounted(() => {
   height: 500px;
   width: 1000px;
   margin: 90px auto;
-}
-.tips {
-  left: 0;
-  top: 0;
-  position: absolute;
-  background-color: #fff;
-  border-radius: 6px;
-  overflow: hidden;
-  padding: 5px 10px;
-  display: none;
 }
 </style>
