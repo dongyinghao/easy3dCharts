@@ -7,13 +7,12 @@
 import { ref, onMounted } from 'vue'
 import {
   Group, Scene, Color, PerspectiveCamera, AxesHelper, Raycaster, MeshLambertMaterial, Mesh, Box3, DirectionalLight,
-  AmbientLight, WebGLRenderer, Vector3, Vector2, BoxGeometry
+  AmbientLight, WebGLRenderer, Vector3, Vector2, BoxGeometry, PlaneGeometry, DoubleSide
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { createText, findStepY, findRange, initLabelZ, drawLine, initLabelX } from '@/utils/dpm';
+import { createText, findStepY, findRange, initLabelZ, drawLine, initLabelX, throttle } from '@/utils/dpm';
 import { ChartConfig } from '@/utils/type';
 import Tips from '@/components/Tips.vue';
-
 
 const options = {
   title: '初三2班期末考试成绩表',
@@ -124,9 +123,12 @@ let sideFlagY = ref<boolean>(false);
 let sideFlagZ = ref<boolean>(false);
 
 let axisLengthY = 0;
+let planTip:any = new Group();
+
 // 全局变量
 let scene:any = null;
 let charts:any = new Group();
+charts.add(planTip);
 let camera:any = null;
 let renderer:any = null;
 let controls:any = null;
@@ -141,7 +143,7 @@ const initScene = () => {
 
 // 相机
 const initCamera = () => {
-  camera = new PerspectiveCamera(75, containerRef.value.clientWidth / containerRef.value.clientHeight, 1, 500);
+  camera = new PerspectiveCamera(75, containerRef.value.clientWidth / containerRef.value.clientHeight, 1, 900);
   camera.position.set(40, 50, 100);
 };
 
@@ -174,29 +176,32 @@ const initEvent = () => {
   raycaster = new Raycaster();
   mouse = new Vector2();
   const info = containerRef.value.getBoundingClientRect();
-  document.addEventListener('mousemove', onDocumnetMouseMove, false)
-  function onDocumnetMouseMove(event:any){
+  const onDocumnetMouseMove = (event) => {
     if (containerRef.value) {
       mouse.x = ((event.clientX - info.x) / containerRef.value.clientWidth) * 2 - 1;
       mouse.y = -((event.clientY - info.y) / containerRef.value.clientHeight) * 2 + 1;
       animate(event);
     }
+    // throttle(200)
+    const point = getMousePosition(event);
+    drawPlanTip(options, point);
   }
+  document.addEventListener('mousemove', onDocumnetMouseMove, false)
 };
 
 // 绘制柱子
 const initBar = (data:any) => {
   let mesh:any = null;
   const {cellPaddingZ = 10, cellPaddingX = 10, series, cellDepth = 5, cellWidth = 5} = data;
-  series.forEach((item:any, idx:number) => {
-    item.data.forEach((it:any, i:number) =>{
+  series.forEach((item, idx:number) => {
+    item.data.forEach((it, i:number) =>{
       const material = new MeshLambertMaterial({ color: item.cellColor });
       const geometry = new BoxGeometry(cellWidth, it.value, cellDepth);
       mesh = new Mesh(geometry, material);
       mesh.castShadow = true;
       mesh.position.x = (cellPaddingX + cellWidth) * i + cellPaddingX + cellWidth / 2;
       mesh.position.z = (cellPaddingZ + cellDepth) * idx + cellPaddingZ + cellDepth / 2;
-      mesh.translateY(it.value / 2);
+      mesh.position.y = (it.value / 2);
       mesh.userData.type = 'bar';
       mesh.userData.data = {...it, name: item.name};
       charts.add(mesh);
@@ -209,7 +214,7 @@ const initBar = (data:any) => {
         y: it.value + 1,
         z: mesh.position.z,
         color: '#ff0000',
-      }, (text:any) => {
+      }, text => {
         charts.add(text);
       });
     })
@@ -236,17 +241,29 @@ const initGridX = (data:any) => {
     lineHX_right.userData.type = 'lineHX'
     gridX_left.add(lineHX_left);
     gridX_right.add(lineHX_right);
-    // 绘制y轴坐标值
+    // 绘制左侧y轴坐标值
     createText({
       font: (step * i).toString(),
-      size: 2,
+      size: 3,
       height: 0.3,
       color: '#1495a1',
-      x: -2,
+      x: -3,
       y: step * i - 1,
       z: (cellPaddingZ + cellDepth) * series.length + cellPaddingZ + 1,
     },(mesh:any) => {
-      charts.add(mesh);
+      gridX_left.add(mesh);
+    });
+    // 绘制右侧y轴坐标值
+    createText({
+      font: (step * i).toString(),
+      size: 3,
+      height: 0.3,
+      color: '#1495a1',
+      x: x + 2,
+      y: step * i - 1,
+      z: (cellPaddingZ + cellDepth) * series.length + cellPaddingZ + 1,
+    },(mesh:any) => {
+      gridX_right.add(mesh);
     });
   }
   for(let i = 0; i <= series.length + 1; i++) {
@@ -271,6 +288,7 @@ const initGridX = (data:any) => {
 // 绘制Y轴网格
 const initGridY = (data:any) => {
   const {cellPaddingZ = 10, cellPaddingX = 10, series, cellDepth = 5, cellWidth = 5} = data;
+  const x = (cellWidth + cellPaddingX) * series[0].data.length + cellPaddingX;
   const gridY_bottom = new Group();
   gridY_bottom.name = 'gridY_bottom';
   const gridY_top = new Group();
@@ -289,7 +307,6 @@ const initGridY = (data:any) => {
       default:
         z = (cellPaddingZ + cellDepth) * (i - 1) + cellPaddingZ + cellDepth / 2
     }
-    const x = (cellWidth + cellPaddingX) * series[0].data.length + cellPaddingX;
     const lineVY_bottom = drawLine([0, 0, z, x, 0, z]);
     const lineVY_top = drawLine([0, axisLengthY, z, x, axisLengthY, z]);
     lineVY_bottom.userData.type = 'lineVY'
@@ -322,6 +339,8 @@ const initGridY = (data:any) => {
 // 绘制Z轴网格
 const initGridZ = (data:any) => {
   const {cellPaddingZ = 10, cellPaddingX = 10, cellDepth = 5, series, cellWidth = 5} = data;
+  const step = findStepY(findRange(options.series));
+  const len = Math.floor(axisLengthY / step);
   const gridZ_front = new Group();
   gridZ_front.name = 'gridZ_front';
   gridZ_front.visible = false;
@@ -349,9 +368,6 @@ const initGridZ = (data:any) => {
     lineVZ_back.userData.type = 'lineVZ'
     gridZ_back.add(lineVZ_back);
   }
-
-  const step = findStepY(findRange(options.series));
-  const len = Math.floor(axisLengthY / step);
   for(let i = 0;i <= len;i++) {
     const x = (cellWidth + cellPaddingX) * (series[0].data.length) + cellPaddingX;
     const y = step * i;
@@ -437,33 +453,26 @@ const initControls = () => {
   controls.target = new Vector3(40,45,0);
   controls.update();
   controls.autoRotate = false;
-  controls.addEventListener('change',() => {
+  controls.addEventListener('change',throttle(() => {
     let box = new Box3().setFromObject(charts);
-    if (sideFlagX.value !== camera.position.x < box.min.x + 20) {
-      charts.children.forEach((it:any) => {
-        if (it.name === 'gridX_right') it.visible = !sideFlagX.value
-        if (it.name === 'gridX_left') it.visible = sideFlagX.value
-      })
+    if (sideFlagX.value !== camera.position.x < box.min.x + 10) {
+      charts.getObjectByName('gridX_right').visible = !sideFlagX.value
+      charts.getObjectByName('gridX_left').visible = sideFlagX.value
     }
-    sideFlagX.value = camera.position.x < box.min.x + 20;
+    sideFlagX.value = camera.position.x < box.min.x + 10;
 
-    if (sideFlagY.value !== camera.position.y < box.min.y + 20) {
-      charts.children.forEach((it:any) => {
-        if (it.name === 'gridY_top') it.visible = !sideFlagY.value
-        if (it.name === 'gridY_bottom') it.visible = sideFlagY.value
-      })
+    if (sideFlagY.value !== camera.position.y < box.min.y + 10) {
+      charts.getObjectByName('gridY_top').visible = !sideFlagY.value
+      charts.getObjectByName('gridY_bottom').visible = sideFlagY.value
     }
-    sideFlagY.value = camera.position.y < box.min.y + 20;
+    sideFlagY.value = camera.position.y < box.min.y + 10;
 
-    if (sideFlagZ.value !== camera.position.z < box.min.z + 20) {
-      charts.children.forEach((it:any) => {
-        if (it.name === 'gridZ_front') it.visible = !sideFlagZ.value
-        if (it.name === 'gridZ_back') it.visible = sideFlagZ.value
-      })
+    if (sideFlagZ.value !== camera.position.z < box.min.z + 10) {
+      charts.getObjectByName('gridZ_front').visible = !sideFlagZ.value
+      charts.getObjectByName('gridZ_back').visible = sideFlagZ.value
     }
-    sideFlagZ.value = camera.position.z < box.min.z + 20;
-    renderer.render(scene, camera);
-  })
+    sideFlagZ.value = camera.position.z < box.min.z + 10;
+  }, 300))
 };
 
 // 绘图
@@ -477,6 +486,60 @@ const drawChart = (options:ChartConfig) => {
   initLabelZ(options, charts);
 };
 
+const getMousePosition = event => {
+  event.preventDefault();
+  var vector = new Vector3();
+  if (!containerRef.value) return;
+  const info = containerRef.value.getBoundingClientRect();
+  vector.set(
+      ((event.clientX - info.x) / containerRef.value.clientWidth) * 2 - 1,
+      -((event.clientY - info.y) / containerRef.value.clientHeight) * 2 + 1,
+      0.5 );
+  vector.unproject( camera );
+  var raycaster = new Raycaster(camera.position, vector.sub(camera.position).normalize());
+  var intersects = raycaster.intersectObjects(scene.children);
+  if (intersects.length > 0) {
+    var selected = intersects.find(it => it.object.userData.type === 'bar');
+    if (typeof selected !== 'undefined') {
+      return {
+        x: selected.object.position.x,
+        y: selected.point.y,
+        z: selected.object.position.z
+      };
+    } else {
+      return {}
+    }
+  }
+  return {}
+}
+
+const drawPlanTip = (data:ChartConfig, pointer) => {
+  if (pointer && pointer.y) {
+    const {x, y, z} = pointer;
+    if (planTip.children.length) {
+      planTip.visible = true;
+      planTip.getObjectByName('lineTipH').position.y = y;
+      planTip.getObjectByName('lineTipH').position.z = z;
+      planTip.getObjectByName('lineTipV').position.x = x;
+      planTip.getObjectByName('lineTipV').position.y = y;
+    } else {
+      const {cellPaddingZ = 10, cellPaddingX = 10, series, cellDepth = 5, cellWidth = 5} = data;
+      const w = (cellWidth + cellPaddingX) * series[0].data.length + cellPaddingX;
+      const h = (cellPaddingZ + cellDepth) * series.length + cellPaddingZ;
+      // 绘制X轴
+      const lineH = drawLine([-w/2, 0, 0, w/2, 0, 0], '#00ff00');
+      lineH.position.x = w / 2
+      lineH.name = 'lineTipH';
+      // 绘制Y轴
+      const lineV = drawLine([0, 0, 0, 0, 0, h], '#00ff00');
+      lineV.name = 'lineTipV';
+      planTip.add(lineH, lineV);
+    }
+  } else {
+    if (planTip) planTip.visible = false;
+  }
+}
+
 // 初始化
 const init = () => {
   // 初始化场景
@@ -487,8 +550,6 @@ const init = () => {
   initEvent();
   initControls();
   // axisHelper();
-
-  // drawGridBySize('0xffffff',options.series[0].data.length * (options.cellPaddingX + options.cellWidth) + options.cellPaddingX, 100, 7, 10, options.cellPaddingX + options.cellWidth / 2, 0);
   drawChart(options)
   scene.add(charts);
   renderer.render(scene, camera);

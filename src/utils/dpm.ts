@@ -156,3 +156,16 @@ export const drawLine = (array:any, color?:string) => {
   geometry.setAttribute( 'position', new BufferAttribute( vertice, 3 ) );
   return new Line( geometry, material );
 }
+
+// 节流
+export const throttle = (fn:Function, time:number) => {
+  let timeId:any = null;
+  return function (this:any) {
+    if (!timeId) {
+      timeId = setTimeout(() => {
+        fn.apply(this, arguments)
+        timeId = null;
+      }, time);
+    }
+  };
+}
