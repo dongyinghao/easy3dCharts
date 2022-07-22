@@ -22,6 +22,14 @@ const routes: RouteRecordRaw[] = [
       requireAuth: false }
   },
   {
+    path: '/map',
+    name: 'Map',
+    component: () => import('@/views/map/index.vue'),
+    meta: {
+      title: '测试',
+      requireAuth: false }
+  },
+  {
     path: '/:pathMath(.*)',
     name: 'Error',
     component: () => import('@/views/errorPage/index.vue'),

@@ -18,7 +18,7 @@ const options = {
   title: '初三2班期末考试成绩表',
   titleColor: '#00a6ff',
   titleSize: 4,
-  titlePosition: 'cener',
+  titlePosition: 'center',
   config: {
     cellPaddingX: 10, // 单元X方向两边空隙
     cellPaddingZ: 6, // 单元Z方向两边空隙
@@ -142,6 +142,7 @@ let mouse:any = null;
 const initScene = () => {
   scene = new Scene();
   scene.background = new Color( 0x111111 );
+  scene.add(charts);
 };
 
 // 相机
@@ -551,7 +552,6 @@ const init = () => {
   initControls(c);
 
   drawChart(options)
-  scene.add(charts);
   renderer.render(scene, camera);
 };
 
