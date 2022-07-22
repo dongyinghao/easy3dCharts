@@ -1,7 +1,7 @@
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 import { BufferGeometry, Line, LineBasicMaterial, BufferAttribute, MeshLambertMaterial, Mesh, Box3 } from 'three';
-import { Text, ChartConfig } from './type';
+import { Text, ChartConfig, ChartParams } from './type';
 
 type ChartType = 'bar' | 'line';
 
@@ -72,12 +72,13 @@ export const findRange = (data:any) => {
 }
 
 // 绘制Z轴标签
-export const initLabelZ = (data:ChartConfig, mesh:any) => {
-  const {cellPaddingZ = 10, cellPaddingX = 10, series, cellDepth = 5, cellWidth = 5} = data;
+export const initLabelZ = (data:ChartConfig, c:ChartParams, mesh:any) => {
+  const {series} = data;
+  const {cellPaddingZ, cellDepth } = c;
   series.forEach((it:any, i:number) => {
-    let z = 0;
+    let z;
     if (i === data.series.length) {
-      z = (cellPaddingZ + cellDepth) * i + cellPaddingZ;
+      z = c.bz;
     } else {
       z = (cellPaddingZ + cellDepth) * i + cellPaddingZ + cellDepth / 2
     }
@@ -85,8 +86,8 @@ export const initLabelZ = (data:ChartConfig, mesh:any) => {
       font: it.name,
       size: 3,
       height: 0.3,
-      x: (cellWidth + cellPaddingX) * series[0].data.length + cellPaddingX + 7,
-      z: z,
+      x: c.bx + 7,
+      z,
       color: '#1495a1',
       rotate: -Math.PI / 2
     }, (text:any) => {
@@ -96,8 +97,9 @@ export const initLabelZ = (data:ChartConfig, mesh:any) => {
 }
 
 // 绘制X轴标签
-export const initLabelX = (data:any, mesh:any) => {
-  const {cellPaddingZ = 10, cellPaddingX = 10, series, cellDepth = 5, cellWidth = 5} = data;
+export const initLabelX = (data:any, c, mesh:any) => {
+  const {series} = data;
+  const {cellPaddingX, cellWidth} = c;
   const itemData = series[0].data
   itemData.forEach((it:any, i:number) => {
     let x = (cellPaddingX + cellWidth) * i + cellPaddingX + cellWidth / 2;
@@ -106,7 +108,7 @@ export const initLabelX = (data:any, mesh:any) => {
       size: 3,
       height: 0.3,
       x,
-      z: (cellPaddingZ + cellDepth) * series.length + cellPaddingZ + 5,
+      z: c.bz + 5,
       color: '#1495a1',
       rotate: -Math.PI / 2
     }, (text:any) => {
@@ -168,4 +170,23 @@ export const throttle = (fn:Function, time:number) => {
       }, time);
     }
   };
+}
+
+
+
+// 根据配置获取相关参数，方便后续绘图使用
+// {x、y、z的边界值，列表长度、列表子项长度}
+export const generateParams = (data:ChartConfig):ChartParams => {
+  const itemSize = data.series.length;
+  const cellSize = data.series[0].data.length;
+  const {cellWidth = 5, cellPaddingX = 10, cellPaddingZ = 10, cellDepth = 5} = data.config;
+  const bx = (cellWidth + cellPaddingX) * cellSize + cellPaddingX;
+  const range = findRange(data.series);
+  const stepY = findStepY(range);
+  let by = 0;
+  for(let i = 0; i * stepY <= range.max; i++) {
+    by = i * stepY + stepY;
+  }
+  const bz = (cellPaddingZ + cellDepth) * itemSize + cellPaddingZ;
+  return {bx, by, bz, itemSize, cellSize, stepY, cellWidth, cellPaddingX, cellPaddingZ, cellDepth}
 }
