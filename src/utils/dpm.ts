@@ -172,6 +172,17 @@ export const throttle = (fn:Function, time:number) => {
   };
 }
 
+// 生成16进制颜色
+export const randomColor = () => {
+  const str = '0123456789abcdef';
+  let col = '#';
+  for (var i = 0; i < 6; i++){
+    const index = Math.floor(Math.random() * 15);
+    col += str[index];
+  }
+  return col;
+}
+
 
 
 // 根据配置获取相关参数，方便后续绘图使用
