@@ -8,19 +8,21 @@ import {
   MeshLambertMaterial, Color, Shape, Vector3, Box3, Raycaster, Vector2
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { data } from "@/assets/map/china";
-import { data as yuzhong } from "@/assets/map/yuzhong";
+import { data as cq_land } from "@/assets/map/cq.js";
 import { data as cq_build } from "@/assets/map/cq_build";
-import { throttle, randomColor, drawLine } from "@/utils/dpm";
-import {onMounted} from "vue";
+import { data as cq_river } from "@/assets/map/cq_river";
+import { data as cq_road } from "@/assets/map/cq_road";
+import { throttle, randomColor, drawLine, createText } from "@/utils/dpm";
+import {onMounted, ref, reactive} from "vue";
 import Tips from '@/components/Tips.vue';
-import {ref, reactive} from "_vue@3.2.37@vue";
 
 const scene:any = new Scene();
 const group:any = new Group();
 const mapGroup:any = new Group();
 const buildGroup:any = new Group();
-group.add(mapGroup, buildGroup);
+const riverGroup:any = new Group();
+const roadGroup:any = new Group();
+group.add(mapGroup, buildGroup, riverGroup, roadGroup);
 scene.add(group);
 scene.background = new Color( 0x111111 );
 let camera:any = null;
@@ -108,6 +110,41 @@ const drawMap = (data, color) => {
   })
 }
 
+// 绘制河流湖泊
+const drawRiver = (data, color) => {
+  data.features.forEach((it, i) => {
+    const array = it.geometry.coordinates[0][0];
+    const shape = new Shape();
+    shape.autoClose = true;
+    array.forEach((t, i) => {
+      if (!i) {
+        shape.moveTo(t[0] * 1000,t[1] * 1000);
+      } else {
+        shape.lineTo(t[0] * 1000,t[1] * 1000);
+      }
+    })
+    // if (it.properties.name) {
+    //   createText({
+    //     font: it.properties.name,
+    //     size: 2,
+    //     height: 0.3,
+    //     x: array[0][0] * 1000,
+    //     y: array[0][1] * 1000,
+    //     z: 0.1,
+    //     color: '#ff0000',
+    //   }, (text) => {
+    //     riverGroup.add(text);
+    //   })
+    // }
+    const depth = Number(Math.random().toFixed(2));
+    const geometry = new ExtrudeGeometry(shape, {depth: 0.01, bevelEnabled: false});
+    const material = new MeshLambertMaterial({color});
+    const mesh = new Mesh(geometry,material);
+    mesh.userData = it.properties;
+    riverGroup.add(mesh);
+  })
+}
+
 // 绘制地图轮廓线
 const drawMapLine = (data, color) => {
   data.features.forEach(it => {
@@ -121,6 +158,22 @@ const drawMapLine = (data, color) => {
     const mesh = drawLine(array, color);
     mesh.userData = it.properties;
     mapGroup.add(mesh)
+  })
+}
+
+// 绘制道路
+const drawRoad = (data, color) => {
+  data.features.forEach(it => {
+    // if (!it.properties.name) return;
+    const arrayList = it.geometry.coordinates[0];
+    console.log(arrayList);
+    const array:number[] = [];
+    arrayList.forEach((t, i) => {
+      array.push(t[0] * 1000, t[1] *1000, 0.02)
+    })
+    const mesh = drawLine(array, color);
+    mesh.userData = it.properties;
+    roadGroup.add(mesh)
   })
 }
 
@@ -142,7 +195,7 @@ const animate = (event?) => {
   controls.update();
   renderer.render(scene, camera);
   raycaster.setFromCamera(mouse, camera);
-  let intersects = raycaster.intersectObject(buildGroup);
+  let intersects = raycaster.intersectObject(group);
   const tipsEl = tipsRef.value ? tipsRef.value.$el : null
   if (intersects.length) {
     if(interSected){
@@ -189,9 +242,15 @@ onMounted(() => {
   init();
   initControls();
   initEvent();
-  // drawMap(data, '#999999');
-  drawMapLine(data, '#ff00dd');
+  // 绘制平面地图
+  drawMap(cq_land, '#6c6c6c');
+  drawRiver(cq_river, '#075272');
+  // 绘制地图轮廓线
+  drawMapLine(cq_land, '#777777');
+  // 绘制建筑物
   drawBuild(cq_build, '#666666');
+  // 绘制建筑物
+  drawRoad(cq_road, '#ffffff');
   // 将物体移动到中标中心
   let boxInfo = new Box3().setFromObject(group);
   // group.rotateX(-Math.PI / 2);
