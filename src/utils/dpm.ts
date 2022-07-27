@@ -8,7 +8,7 @@ type ChartType = 'bar' | 'line';
 // 文字创建
 export const createText = (data:Text, callback:any) => {
   const loader = new FontLoader();
-  loader.load( '/fonts/FangSong_Regular.json', fonts => {
+  loader.load( '/fonts/XinGothicGB.json', fonts => {
     const {font, size=3, height=0.5, x=0, y=0, z=0, rotate=0, color='#ffffff'} = data;
     const textGeo:any = new TextGeometry( font, {
       font: fonts,
@@ -182,8 +182,6 @@ export const randomColor = () => {
   }
   return col;
 }
-
-
 
 // 根据配置获取相关参数，方便后续绘图使用
 // {x、y、z的边界值，列表长度、列表子项长度}
