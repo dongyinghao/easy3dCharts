@@ -1,9 +1,7 @@
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 import { BufferGeometry, Line, LineBasicMaterial, BufferAttribute, MeshLambertMaterial, Mesh, Box3 } from 'three';
-import { Text, ChartConfig, ChartParams } from './type';
-
-type ChartType = 'bar' | 'line';
+import { Text, ChartConfig, ChartParams } from './type.d';
 
 // 文字创建
 export const createText = (data:Text, callback:any) => {
@@ -35,7 +33,7 @@ export const createText = (data:Text, callback:any) => {
 }
 
 // 找到合适的纵轴步距
-export const findStepY = (data:any) => {
+export const findStepY = (data) => {
   const { min, max } = data;
   const diff = Math.ceil(max - min);
   let step = 1;
@@ -54,7 +52,7 @@ export const findStepY = (data:any) => {
 }
 
 // 找到最大值和最小值
-export const findRange = (data:any) => {
+export const findRange = (data) => {
   let min = Infinity;
   let max = -Infinity;
   data.forEach((item:any) => {
@@ -72,7 +70,7 @@ export const findRange = (data:any) => {
 }
 
 // 绘制Z轴标签
-export const initLabelZ = (data:ChartConfig, c:ChartParams, mesh:any) => {
+export const initLabelZ = (data:ChartConfig, c:ChartParams, mesh) => {
   const {series} = data;
   const {cellPaddingZ, cellDepth } = c;
   series.forEach((it:any, i:number) => {
@@ -97,7 +95,7 @@ export const initLabelZ = (data:ChartConfig, c:ChartParams, mesh:any) => {
 }
 
 // 绘制X轴标签
-export const initLabelX = (data:any, c, mesh:any) => {
+export const initLabelX = (data, c, mesh) => {
   const {series} = data;
   const {cellPaddingX, cellWidth} = c;
   const itemData = series[0].data
@@ -151,7 +149,7 @@ export const drawGridBySize = (color:string, w:number, h:number, countX:number, 
 };
 
 // 绘制一条直线
-export const drawLine = (array:any, color?:string) => {
+export const drawLine = (array, color?:string) => {
   const material = new LineBasicMaterial( {color: color || '#ffffff'} );
   const geometry = new BufferGeometry();
   const vertice = new Float32Array( array );

@@ -3,8 +3,8 @@
 
 <script lang="ts" setup>
 import {
-  Scene, SphereGeometry, Group, Mesh, AmbientLight, DirectionalLight, PerspectiveCamera, Clock,
-  WebGLRenderer, AxesHelper, MeshLambertMaterial, Color, KeyframeTrack, AnimationClip, AnimationMixer
+  Scene, SphereGeometry, Group, Mesh, AmbientLight, DirectionalLight, PerspectiveCamera, Clock, DoubleSide, PlaneGeometry,MeshStandardMaterial,BoxGeometry,OrthographicCamera,
+  WebGLRenderer, AxesHelper, MeshLambertMaterial, Color, KeyframeTrack, AnimationClip, AnimationMixer, Object3D, SpotLight, SpotLightHelper, MeshPhongMaterial, DirectionalLightHelper
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 // import {throttle} from "@/utils/dpm";
@@ -33,14 +33,24 @@ const initControls = () => {
 };
 
 const init = () => {
-  camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 500);
-  camera.position.set(10, 5, 200);
-  const light = new DirectionalLight( 0xffffff);
-  light.position.set( 0, 0, 1 );
-  light.castShadow = true;
-  scene.add(new AmbientLight( 0xdddddd ), light);
-  scene.add(new AxesHelper(5000));
+  camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 5000)
+  camera.position.set(10, 5, 100);
+  // const light = new DirectionalLight( 0xffffff);
+  // light.position.set( 0, 0, 1 );
+  // light.castShadow = true;
+  // scene.add(new AmbientLight( 0xdddddd ), light);
 
+
+  const light = new DirectionalLight( 0xffffff);
+  light.position.set( 0, 0, 60 );
+  light.castShadow = true;
+  light.shadow.mapSize.width = 1024
+  light.shadow.mapSize.height = 1024
+  const p = new Object3D();
+  p.position.set(0, 50, 10);
+  light.target = p;
+  scene.add(light, light.target, new DirectionalLightHelper(light));
+  scene.add(new AxesHelper(5000));
   renderer = new WebGLRenderer({ alpha: true, antialias:true });
   renderer.shadowMap.enabled = true;
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -49,10 +59,34 @@ const init = () => {
   document.body.appendChild(renderer.domElement);
 }
 
+const drawPlan = () => {
+  const geometry = new PlaneGeometry( 300, 300 );
+  const material = new MeshLambertMaterial({color: 0Xffffff});
+  const plane = new Mesh( geometry, material );
+  // plane.rotateX(-Math.PI / 2);
+  plane.position.z = -5;
+  plane.position.x = 0;
+  plane.castShadow = true;
+  plane.receiveShadow = true;
+  scene.add( plane );
+}
+drawPlan();
+
+const drawBox = () => {
+  const geometry = new BoxGeometry( 20, 20, 20 );
+  const material = new MeshLambertMaterial({color: 0Xff00ff});
+  const plane = new Mesh( geometry, material );
+  plane.position.set(-10,0,0);
+  box.add( plane );
+}
+drawBox();
+
 const drawSphere = () => {
-  const geometry = new SphereGeometry( 15, 32, 16 );
+  const geometry = new SphereGeometry( 20, 22, 16 );
   const material = new MeshLambertMaterial( { color: 0xffff00 } );
   sphere = new Mesh( geometry, material );
+  sphere.position.set(30,0,30)
+  sphere.castShadow = true;
   box.add( sphere );
 }
 
@@ -86,13 +120,13 @@ const animate = () => {
   controls.update();
   renderer.render(scene, camera);
   // 更新混合器相关的时间
-  mixer.update(clock.getDelta());
+  // mixer.update(clock.getDelta());
 }
 
 onMounted(() => {
   init();
   initControls();
-  initAnimat();
+  // initAnimat();
   animate();
   drawSphere();
 })

@@ -12,16 +12,22 @@ export interface Text {
 
 type ChartType = 'bar' | 'line';
 
-interface cellConfig {
+interface Coordinate {
+  x: number,
+  y: number,
+  z: number
+}
+
+interface CellConfig {
   value: number,
   label: string,
 }
 
-interface itemConfig {
+interface ItemConfig {
   name: string,
   type: string,
   cellColor?: string,
-  data: cellConfig[]
+  data: CellConfig[]
 }
 
 export interface spaceConfig {
@@ -38,7 +44,7 @@ export interface ChartConfig {
   titleSize?: number, // 标题字号
   titlePosition?: string, // 标题对齐方式
   config:spaceConfig,
-  series: Array<itemConfig>
+  series: Array<ItemConfig>
 }
 
 // 图表配置文件

@@ -11,7 +11,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { createText, initLabelZ, drawLine, initLabelX, throttle, generateParams } from '@/utils/dpm';
-import {ChartConfig, ChartParams, spaceConfig} from '@/utils/type';
+import {ChartConfig, ChartParams, spaceConfig} from '@/utils/type.d';
 import Tips from '@/components/Tips.vue';
 
 const options = {
