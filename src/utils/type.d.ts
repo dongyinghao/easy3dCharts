@@ -12,11 +12,15 @@ export interface Text {
 
 type ChartType = 'bar' | 'line';
 
+type Nb = 0 | 1;
+
 interface Coordinate {
   x: number,
   y: number,
-  z: number
+  z?: number
 }
+
+type ZbArray = [number, number, number]
 
 interface CellConfig {
   value: number,

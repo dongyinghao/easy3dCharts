@@ -1,7 +1,8 @@
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 import { BufferGeometry, Line, LineBasicMaterial, BufferAttribute, MeshLambertMaterial, Mesh, Box3 } from 'three';
-import { Text, ChartConfig, ChartParams } from './type.d';
+import { Text, ChartConfig, ChartParams, Coordinate, Nb } from './type.d';
+import {TextureLoader} from "_@types_three@0.141.0@@types/three";
 
 // 文字创建
 export const createText = (data:Text, callback:any) => {
@@ -196,4 +197,21 @@ export const generateParams = (data:ChartConfig):ChartParams => {
   }
   const bz = (cellPaddingZ + cellDepth) * itemSize + cellPaddingZ;
   return {bx, by, bz, itemSize, cellSize, stepY, cellWidth, cellPaddingX, cellPaddingZ, cellDepth}
+}
+
+// 根据角度计算弧度
+export const a2r = (a:number):number => Math.PI * a / 180;
+
+// 根据弧度计算角度
+export const r2a = (r:number):number => 180 * r / Math.PI;
+
+// 计算线段(p1->p2)和x轴的夹角(得到弧度单位)
+export const l2a = (p1:number[], p2:number[]):number => Math.atan2(p2[1]-p1[1], p2[0]-p1[0]);
+
+// 计算平面折线段的偏移坐标,d:偏移距离,t:偏移方向
+export const offset = (p1:number[], p2:number[], d:number, t?:Nb):number[][] => {
+  const ra = l2a(p1, p2);
+  const diffX = Math.sin(ra) * d;
+  const diffY = Math.cos(ra) * d;
+  return [[p1[0] + diffX, p1[1] - diffY], [p2[0] + diffX, p2[1] - diffY]];
 }

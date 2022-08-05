@@ -1,4 +1,4 @@
-import { Object3D, SpotLight } from 'three';
+import { Object3D, SpotLight, MeshLambertMaterial, TextureLoader } from 'three';
 import { Coordinate } from './type.d';
 
 // 创建聚光灯
@@ -6,12 +6,12 @@ import { Coordinate } from './type.d';
 export const createSpotLight = (originPoint:Coordinate, targetPoint:Coordinate, angle?:number, color?:number):any => {
   const {x, y, z} = originPoint;
   const light = new SpotLight( color || 0xffffff);
-  light.position.set( x, y, z );
+  light.position.set( x, y, z as number );
   light.castShadow = true;
   light.angle = angle || Math.PI / 4;
   // 聚光灯照射点
   const p = new Object3D();
-  p.position.set(targetPoint.x, targetPoint.y, targetPoint.z);
+  p.position.set(targetPoint.x, targetPoint.y, targetPoint.z as number);
   light.target = p;
   return light;
 }
@@ -46,4 +46,13 @@ export const ZtoZoom = (n:number):number => {
     prev = Number(key);
   }
   return 14
+}
+
+// 皮肤加载
+export const loadTexture = (url) => {
+  const load = new TextureLoader();
+  const texture = load.load(url);
+  return new MeshLambertMaterial({
+    map: texture,
+  });
 }
