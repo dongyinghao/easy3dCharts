@@ -1,8 +1,7 @@
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
-import { BufferGeometry, Line, LineBasicMaterial, BufferAttribute, MeshLambertMaterial, Mesh, Box3 } from 'three';
-import { Text, ChartConfig, ChartParams, Coordinate, Nb } from './type.d';
-import {TextureLoader} from "_@types_three@0.141.0@@types/three";
+import { BufferGeometry, Line, LineBasicMaterial, BufferAttribute, MeshLambertMaterial, Mesh, Box3, LineDashedMaterial, TextureLoader } from 'three';
+import { Text, ChartConfig, ChartParams, Nb, LineOpt } from './type.d';
 
 // 文字创建
 export const createText = (data:Text, callback:any) => {
@@ -132,7 +131,7 @@ export const drawGridBySize = (color:string, w:number, h:number, countX:number, 
     } else {
       x = stepX * (i - 1) + indentX
     }
-    const line = drawLine([x, 0, 0, x, h, 0], color)
+    const line = drawLine([x, 0, 0, x, h, 0], {color})
     // scene.add(line);
   }
   for(let i = 0; i< countY; i++) {
@@ -144,18 +143,25 @@ export const drawGridBySize = (color:string, w:number, h:number, countX:number, 
     } else {
       y = stepY * (i - 1) + indentY
     }
-    const line = drawLine([0, y, 0, w, y, 0], color)
+    const line = drawLine([0, y, 0, w, y, 0], {color})
     // scene.add(line);
   }
 };
 
 // 绘制一条直线
-export const drawLine = (array, color?:string) => {
-  const material = new LineBasicMaterial( {color: color || '#ffffff'} );
+export const drawLine = (array, opt?:LineOpt) => {
+  let material;
+  if (opt?.type === 'dashed') {
+    material = new LineDashedMaterial({color: opt ? opt.color : '#ffffff', dashSize: 1, gapSize: 2});
+  } else {
+    material = new LineBasicMaterial( {color: opt ? opt.color : '#ffffff'} );
+  }
   const geometry = new BufferGeometry();
   const vertice = new Float32Array( array );
   geometry.setAttribute( 'position', new BufferAttribute( vertice, 3 ) );
-  return new Line( geometry, material );
+  const mesh = new Line( geometry, material );
+  mesh.computeLineDistances();
+  return mesh
 }
 
 // 节流
@@ -211,7 +217,7 @@ export const l2a = (p1:number[], p2:number[]):number => Math.atan2(p2[1]-p1[1], 
 // 计算平面折线段的偏移坐标,d:偏移距离,t:偏移方向
 export const offset = (p1:number[], p2:number[], d:number, t?:Nb):number[][] => {
   const ra = l2a(p1, p2);
-  const diffX = Math.sin(ra) * d;
-  const diffY = Math.cos(ra) * d;
+  const diffX = Math.sin(ra) * d * (t ? -1 : 1);
+  const diffY = Math.cos(ra) * d * (t ? -1 : 1);
   return [[p1[0] + diffX, p1[1] - diffY], [p2[0] + diffX, p2[1] - diffY]];
 }

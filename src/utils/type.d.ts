@@ -12,12 +12,19 @@ export interface Text {
 
 type ChartType = 'bar' | 'line';
 
+type LineType = 'dashed' | 'solid';
+
 type Nb = 0 | 1;
 
 interface Coordinate {
   x: number,
   y: number,
   z?: number
+}
+
+interface LineOpt {
+  color?: string | number,
+  type?: LineType,
 }
 
 type ZbArray = [number, number, number]
