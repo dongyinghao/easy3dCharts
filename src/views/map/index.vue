@@ -53,10 +53,11 @@ import { data as nananRoad } from "@/assets/map/road/nanan";
 import { data as jiangbeiRoad } from "@/assets/map/road/jiangbei";
 import { data as yubeiRoad } from "@/assets/map/road/yubei";
 import {throttle, randomColor, drawLine, createText, offset} from "@/utils/dpm";
-import {onMounted, ref, reactive} from "vue";
+import {onMounted, ref, reactive, transformVNodeArgs} from "vue";
 import Tips from '@/components/Tips.vue';
 import {createSpotLight, ZoomToZ, ZtoZoom, loadTexture} from "@/utils/tools";
 import buildMap from "@/assets/images/build.jpg";
+import {Coordinate} from "@/utils/type";
 
 const scene:any = new Scene();
 const group:any = new Group();
@@ -81,8 +82,11 @@ let raycaster:any = null;
 let mouse:any = null;
 let interSected:any = null;
 let landDepth:number = 100;
+let transformX:number = 0;
+let transformY:number = 0;
 let zoom:number = 2.5;
 let animateFlag:boolean = false;
+let targetPosition:any = new Vector3(0,0,0);
 let tipsRef:any = ref();
 let cityListRef:any = ref();
 let tips = ref<string>('');
@@ -92,36 +96,15 @@ let mousePosition:any = {x: 0, y: 0};
 // const texture = load.load(buildMap);
 
 const handleClick = data => {
-  console.log(data);
+  targetPosition.set(data.centroid[0] * 1000 - transformX, data.centroid[1] * 1000 - transformY, 100);
+  animateFlag = true;
 }
-
-// 鼠标控制器
-const initControls = () => {
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.target = new Vector3(-1200,-620,0);
-  controls.addEventListener('change',throttle(() => {
-    zoom = ZoomToZ(camera.position.z);
-    console.log('缩放比例',zoom);
-    // if (!animateFlag){
-      buildGroup.visible = zoom < 5;
-      areaNameGroup.visible = zoom > 5;
-      roadGroup.visible = zoom < 7;
-      riverGroup.visible = zoom < 9;
-      if (zoom > 9 && areaNameGroup.currentValue === 3) {
-        drawMapName(cq_land, 12, '#2d2d2d');
-      }
-      if (zoom <= 9 && areaNameGroup.currentValue === 12) {
-        drawMapName(cq_land, 3, '#2d2d2d');
-      }
-    // }
-  }, 500))
-};
 
 // 相机
 const initCamera = () => {
   camera = new PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 5000);
-  camera.position.set(-1200, -620, 500);
-  // scene.add(new AxesHelper(5000));
+  camera.position.set(0, 0, 500);
+  scene.add(new AxesHelper(5000));
 }
 
 // 渲染器
@@ -399,17 +382,17 @@ const selectedProcess = (intersects) => {
 const animate = (event?) => {
   requestAnimationFrame(animate);
   camera.updateProjectionMatrix();
-  controls.update();
   renderer.render(scene, camera);
-  const z = ZtoZoom(2.5);
   // 地图动画
   if (animateFlag) {
-    if (camera.position.z - z > 3) {
-      console.log(111111122222);
-      camera.position.z -= (camera.position.z - z) / 100;
-    } else if (camera.position.z > z) {
-      console.log(555555555555);
-      camera.position.z -= 0.5;
+    if (targetPosition.distanceTo(new Vector3(camera.position.x,camera.position.y, 100)) > 10) {
+      console.log('动画中');
+      camera.position.x -= (camera.position.x - targetPosition.x) / 30;
+      camera.position.y -= (camera.position.y - targetPosition.y) / 30;
+      camera.position.z -= (camera.position.z - targetPosition.z) / 5;
+      controls.target.x = camera.position.x;
+      controls.target.y = camera.position.y;
+      // controls.target.z = camera.position.z;
     } else {
       console.log('动画完成');
       animateFlag = false;
@@ -421,13 +404,15 @@ const animate = (event?) => {
       //   buildGroup.visible = true;
       //   if (!buildGroup.children.length) if (!buildGroup.children.length) drawBuild(cq_build, '#666666');
       // }
-      if (zoom < 7 ) {
-        drawRoads('#777777');
-        drawRivers('#075272');
-      }
-      if (zoom < 5 ) {
-        drawBuild(cq_build, '#cccccc');
-      }
+      // if (zoom < 7 ) {
+      //   drawRoads('#777777');
+      //   drawRivers('#075272');
+      // }
+      // if (zoom < 5 ) {
+      //   drawBuild(cq_build, '#cccccc');
+      // }
+      // initControls(camera.position.x, camera.position.y, camera.position.z);
+      console.log(99999, controls.target.x,controls.target.y,controls.target.z);
     }
   }
   // 初始化时，不应该触发选中效果
@@ -436,6 +421,29 @@ const animate = (event?) => {
   let intersects = raycaster.intersectObject(buildGroup);
   selectedProcess(intersects);
 }
+
+// 鼠标控制器
+const initControls = () => {
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.target = new Vector3(0,0,0);
+  controls.update();
+  controls.addEventListener('change',throttle(() => {
+    zoom = ZtoZoom(camera.position.z);
+    console.log('当前缩放比例',zoom);
+    // if (!animateFlag){
+    buildGroup.visible = zoom < 5;
+    areaNameGroup.visible = zoom > 5;
+    roadGroup.visible = zoom < 7;
+    riverGroup.visible = zoom < 9;
+    // if (zoom > 9 && areaNameGroup.currentValue === 3) {
+    //   drawMapName(cq_land, 12, '#2d2d2d');
+    // }
+    // if (zoom <= 9 && areaNameGroup.currentValue === 12) {
+    //   drawMapName(cq_land, 3, '#2d2d2d');
+    // }
+    // }
+  }, 500))
+};
 
 // 绘制道路
 const drawRoads = (color) => {
@@ -487,8 +495,10 @@ onMounted(() => {
   // 将物体移动到中标中心
   let boxInfo = new Box3().setFromObject(group);
   // group.rotateX(-Math.PI / 2);
-  group.translateX(-(boxInfo.min.x + boxInfo.max.x) / 2);
-  group.translateY(-(boxInfo.min.y + boxInfo.max.y) / 2);
+  transformX = (boxInfo.min.x + boxInfo.max.x) / 2;
+  transformY = (boxInfo.min.y + boxInfo.max.y) / 2;
+  group.translateX(-transformX);
+  group.translateY(-transformY);
   group.translateZ(-landDepth);
   animate();
 })
@@ -498,16 +508,17 @@ onMounted(() => {
   position: fixed;
   right: 10px;
   top: 10px;
-  border: 1px solid #8d8d8d;
+  border: 1px solid #e3e1e1;
   font-size: 14px;
+  background-color: rgba(#b7b5b5, 0.7);
   div {
     padding: 2px 10px;
     text-align: center;
     cursor: pointer;
-    border-bottom: 1px solid #8d8d8d;
+    border-bottom: 1px solid #e3e1e1;
     transition: all 0.1s linear;
     &:hover {
-      background-color: rgba(100,100,100, 0.1);
+      background-color: rgba(100,100,100, 0.3);
     }
   }
 }
