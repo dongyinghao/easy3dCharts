@@ -52,14 +52,13 @@ import { data as yuzhongRoad } from "@/assets/map/road/yuzhong";
 import { data as nananRoad } from "@/assets/map/road/nanan";
 import { data as jiangbeiRoad } from "@/assets/map/road/jiangbei";
 import { data as yubeiRoad } from "@/assets/map/road/yubei";
-import {throttle, randomColor, drawLine, createText, offset} from "@/utils/dpm";
-import {onMounted, ref, reactive, transformVNodeArgs} from "vue";
+import { throttle } from "@/utils/dpm";
+import { onMounted, ref, reactive, transformVNodeArgs } from "vue";
 import Tips from '@/components/Tips.vue';
-import {createSpotLight, ZoomToZ, ZtoZoom, loadTexture} from "@/utils/tools";
+import { ZtoZoom, zoomByMouse, drawRoadPlane, drawRoadLine, drawRiver, drawBuild, drawMapLine, drawMapPlane, drawAreaName } from "@/utils/tools";
 import buildMap from "@/assets/images/build.jpg";
 import buildMap1 from "@/assets/images/build1.webp";
 import buildMap2 from "@/assets/images/build2.webp";
-import {Coordinate} from "@/utils/type";
 
 const scene:any = new Scene();
 const group:any = new Group();
@@ -73,7 +72,6 @@ const riverGroup:any = new Group();
 riverGroup.visible = false;
 const roadGroup:any = new Group();
 let areaNameGroup:any = new Group();
-areaNameGroup.name = 'areaNameGroup';
 group.add(mapGroup, buildGroup, riverGroup, roadGroup, mapLineGroup, yangtzeRiverGroup, areaNameGroup);
 scene.add(group);
 scene.background = new Color( 0x111111 );
@@ -109,6 +107,7 @@ const initCamera = () => {
   camera.position.set(0, 0, 500);
   scene.add(new AxesHelper(5000));
 }
+initCamera();
 
 // 渲染器
 const initRenderer = () => {
@@ -124,200 +123,13 @@ const initRenderer = () => {
 // 初始化灯光
 const initLight = () => {
   const light = new DirectionalLight( 0xffffff);
-  light.position.set( 0, -1, 1 );
+  light.position.set( 0, 1, 1 );
   light.castShadow = true;
-  scene.add(light, new AmbientLight(0X666666));
+  scene.add(light, new AmbientLight(0X555555));
 
   // const light = new PointLight( 0xffffff);
-  // light.position.set( -1400, -450, 200 );
-  // scene.add(light, new AmbientLight(0X222222), new PointLightHelper(light));
-}
-
-// 绘制地图
-const drawMap = (data, color) => {
-  data.features.forEach(it => {
-    if (!it.properties.name) return;
-    const array = it.geometry.coordinates[0][0];
-    const shape = new Shape();
-    shape.autoClose = true;
-    array.forEach((t, i) => {
-      if (!i) {
-        shape.moveTo(t[0] * 1000,t[1] * 1000);
-      } else {
-        shape.lineTo(t[0] * 1000,t[1] * 1000);
-      }
-    })
-    const geometry = new ExtrudeGeometry(shape, {depth: landDepth, bevelEnabled: false});
-    const material = new MeshLambertMaterial({color});
-    const mesh = new Mesh(geometry,material);
-    mesh.receiveShadow = true;
-    mesh.userData = it.properties;
-    mapGroup.add(mesh);
-  })
-}
-
-// 绘制地图轮廓线
-const drawMapLine = (data, color) => {
-  data.features.forEach(it => {
-    if (!it.properties.name) return;
-    const arrayList = it.geometry.coordinates[0][0];
-    const array:number[] = [];
-    arrayList.forEach((t, i) => {
-      array.push(t[0] * 1000, t[1] *1000, landDepth + 0.1)
-    })
-    array.push(arrayList[0][0] * 1000,arrayList[0][1] * 1000,landDepth + 0.1)
-    const mesh = drawLine(array, {color, type: 'dashed'});
-    mesh.userData = it.properties;
-    if (it.properties.name) {
-      createText({
-        font: it.properties.name,
-        size: 12,
-        height: 0.3,
-        x: it.properties.centroid[0] * 1000,
-        y: it.properties.centroid[1] * 1000,
-        z: landDepth + 0.2,
-        color: '#2d2d2d',
-      }, text => {
-        areaNameGroup.add(text);
-      });
-    }
-    mapLineGroup.add(mesh);
-  })
-}
-
-// 绘制地图区域名称
-const drawMapName = (data, fs, color?) => {
-  const names = group.getObjectByName('areaNameGroup');
-  if (names && names.children.length) {
-    names.children = [];
-  }
-  data.features.forEach(it => {
-    if (!it.properties.name) return;
-    createText({
-      font: it.properties.name,
-      size: fs,
-      height: 0.3,
-      x: it.properties.centroid[0] * 1000,
-      y: it.properties.centroid[1] * 1000,
-      z: landDepth + 0.2,
-      color,
-    }, text => {
-      areaNameGroup.currentValue = fs;
-      areaNameGroup.add(text);
-    });
-  })
-}
-
-// 绘制建筑物
-const drawBuild = (data, color) => {
-  data.features.forEach(it => {
-    const array = it.geometry.coordinates[0][0];
-    const shape = new Shape();
-    shape.autoClose = true;
-    array.forEach((t, i) => {
-      if (!i) {
-        shape.moveTo(t[0] * 1000,t[1] * 1000);
-      } else {
-        shape.lineTo(t[0] * 1000,t[1] * 1000);
-      }
-    })
-    const depth = Math.max(0.3,Number(Math.random().toFixed(2)));
-    const geometry = new ExtrudeGeometry(shape, {depth, bevelEnabled: false});
-    // const material = new MeshLambertMaterial({color,map: texture});
-    const material = new MeshLambertMaterial({color});
-    const mesh = new Mesh(geometry,material);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    mesh.userData = it.properties;
-    buildGroup.add(mesh);
-    buildGroup.position.z = landDepth;
-  })
-}
-
-// 绘制河流湖泊
-const drawRiver = (data, color, group) => {
-  data.features.forEach(it => {
-    const shape = new Shape();
-    shape.autoClose = true;
-    it.geometry.coordinates[0].forEach((item, idx) => {
-      if (!idx) {
-        item.forEach((t, i) => {
-          if (!i) {
-            shape.moveTo(t[0] * 1000,t[1] * 1000);
-          } else {
-            shape.lineTo(t[0] * 1000,t[1] * 1000);
-          }
-        })
-      } else { // 内轮廓
-        const hole = new Path();
-        item.forEach((t, i) => {
-          if (!i) {
-            hole.moveTo(t[0] * 1000,t[1] * 1000);
-          } else {
-            hole.lineTo(t[0] * 1000,t[1] * 1000);
-          }
-        })
-        shape.holes.push(hole);
-      }
-    })
-    const geometry = new ShapeGeometry(shape);
-    const material = new MeshLambertMaterial({color});
-    const mesh = new Mesh(geometry,material);
-    mesh.userData = it.properties;
-    group.add(mesh);
-    group.position.z = 100.01
-  })
-}
-
-// 绘制道路中线
-const drawRoadLine = (data, color) => {
-  data.features.forEach(it => {
-    const arrayList = it.geometry.coordinates[0];
-    const array:number[] = [];
-    arrayList.forEach((t, i) => {
-      array.push(t[0] * 1000, t[1] *1000, landDepth + 0.02)
-    })
-    const mesh = drawLine(array, {color});
-    mesh.userData = it.properties;
-    roadGroup.add(mesh)
-  })
-}
-
-// 绘制道路
-const drawRoad = (data, color) => {
-  data.features.forEach(it => {
-    const arrayList = it.geometry.coordinates[0];
-    const leftArray:number[][] = [];
-    const rightArray:number[][] = [];
-    let prevPoint:number[] = [];
-    arrayList.forEach(it => {
-      if (prevPoint.length) {
-        const p1 = offset( prevPoint, it, 0.00005, 1);
-        const p2 = offset( prevPoint, it, 0.00005, 0);
-        leftArray.push(p1[0], p1[1]);
-        rightArray.push(p2[0], p2[1]);
-      }
-      prevPoint = it;
-    });
-    rightArray.reverse();
-    rightArray.forEach(it => {
-      leftArray.push(it);
-    })
-    var shape = new Shape();
-    shape.autoClose = true;
-    leftArray.forEach((t, i) => {
-      if (!i) {
-        shape.moveTo(t[0] * 1000,t[1] * 1000);
-      } else {
-        shape.lineTo(t[0] * 1000,t[1] * 1000);
-      }
-    })
-    const geometry = new ShapeGeometry(shape);
-    const material = new MeshLambertMaterial({color});
-    const mesh = new Mesh(geometry,material);
-    mesh.position.z = landDepth + 0.015;
-    roadGroup.add( mesh );
-  })
+  // light.position.set( -1500, -450, 300 );
+  // scene.add(light, new PointLightHelper(light));
 }
 
 // 移入、点击事件
@@ -337,7 +149,8 @@ const initEvent = () => {
 const selectedProcess = (intersects) => {
   const tipsEl = tipsRef.value ? tipsRef.value.$el : null
   if (intersects.length) {
-    if (intersects[0].object.userData.adcode) {
+    // 如果选择的是行政区块
+    if (intersects[0].object.userData.adcode && buildGroup.visible) {
       if(interSected) interSected.material.color.setHex(interSected.currentHex);
       return;
     }
@@ -394,7 +207,6 @@ const animate = (event?) => {
       camera.position.z -= (camera.position.z - targetPosition.z) / 5;
       controls.target.x = camera.position.x;
       controls.target.y = camera.position.y;
-      // controls.target.z = camera.position.z;
     } else {
       console.log('动画完成');
       animateFlag = false;
@@ -420,7 +232,7 @@ const animate = (event?) => {
   // 初始化时，不应该触发选中效果
   if (mouse.x === 0 && mouse.y === 0) return;
   raycaster.setFromCamera(mouse, camera);
-  let intersects = raycaster.intersectObject(buildGroup);
+  let intersects = raycaster.intersectObject(group);
   selectedProcess(intersects);
 }
 
@@ -447,52 +259,83 @@ const initControls = () => {
   }, 500))
 };
 
-// 绘制道路
+// 道路渲染
 const drawRoads = (color) => {
-  drawRoad(yuzhongRoad, color);
-  drawRoad(nananRoad, color);
-  drawRoad(jiangbeiRoad, color);
-  drawRoad(yubeiRoad, color);
+  const yuzhong:any = drawRoadPlane(yuzhongRoad, color);
+  yuzhong.position.z = landDepth + 0.015;
+  const nanan:any = drawRoadPlane(nananRoad, color);
+  nanan.position.z = landDepth + 0.015;
+  const jiangbei:any = drawRoadPlane(jiangbeiRoad, color);
+  jiangbei.position.z = landDepth + 0.015;
+  const yubei:any = drawRoadPlane(yubeiRoad, color);
+  yubei.position.z = landDepth + 0.015;
+  roadGroup.add( yuzhong, nanan, jiangbei, yubei );
 }
 
-// 绘制道路
+// 道路中线渲染
 const drawRoadLines = (color) => {
-  drawRoadLine(yuzhongRoad, color);
-  drawRoadLine(nananRoad, color);
-  drawRoadLine(jiangbeiRoad, color);
-  drawRoadLine(yubeiRoad, color);
+  const yuzhong:any = drawRoadLine(yuzhongRoad, color);
+  yuzhong.position.z = landDepth;
+  const nanan:any = drawRoadLine(nananRoad, color);
+  nanan.position.z = landDepth;
+  const jiangbei:any = drawRoadLine(jiangbeiRoad, color);
+  jiangbei.position.z = landDepth;
+  const yubei:any = drawRoadLine(yubeiRoad, color);
+  yubei.position.z = landDepth;
+  roadGroup.add( yuzhong, nanan, jiangbei, yubei );
 }
 
-// 绘制河流
+// 河流渲染
 const drawRivers = (color) => {
-  drawRiver(yangtzeRiver, color, yangtzeRiverGroup);
-  drawRiver(jiangjinRiver, color, riverGroup);
-  drawRiver(hechuanRiver, color, riverGroup);
-  drawRiver(yubeiRiver, color, riverGroup);
-  drawRiver(nananRiver, color, riverGroup);
-  drawRiver(bananRiver, color, riverGroup);
-  drawRiver(shapingbaRiver, color, riverGroup);
+  // 长江
+  const yangtze:any = drawRiver(yangtzeRiver, color);
+  yangtze.position.z = landDepth + 0.01;
+  yangtzeRiverGroup.add(yangtze);
+  // 江津
+  const jiangjin:any = drawRiver(jiangjinRiver, color);
+  jiangjin.position.z = landDepth + 0.01;
+  // 合川
+  const hechuan:any = drawRiver(hechuanRiver, color);
+  hechuan.position.z = landDepth + 0.01;
+  // 渝北
+  const yubei:any = drawRiver(yubeiRiver, color);
+  yubei.position.z = landDepth + 0.01;
+  // 南岸
+  const nanan:any = drawRiver(nananRiver, color);
+  nanan.position.z = landDepth + 0.01;
+  // 巴南
+  const banan:any = drawRiver(bananRiver, color);
+  banan.position.z = landDepth + 0.01;
+  // 沙坪坝
+  const shapingba:any = drawRiver(shapingbaRiver, color);
+  shapingba.position.z = landDepth + 0.01;
+  riverGroup.add(shapingba, banan, nanan, jiangjin, yubei, hechuan);
 }
 
 onMounted(() => {
-  initCamera();
   initRenderer();
   initLight();
   initControls();
   initEvent();
-  // 绘制平面地图
-  drawMap(cq_land, 0x999999);
-  // 绘制地图轮廓线
-  drawMapLine(cq_land, '#000000');
-  // 绘制地图轮廓线
-  drawMapName(cq_land, 12, '#2d2d2d');
-  // 绘制建筑物
-  drawBuild(cq_build, '#cccccc');
-  // 绘制道路
+  // 地图渲染
+  const mapPlane = drawMapPlane(cq_land, 0x999999, landDepth);
+  // 地图轮廓线渲染
+  const mapLine = drawMapLine(cq_land, '#000000');
+  mapLine.position.z = landDepth;
+  mapGroup.add(mapLine, mapPlane);
+  // 地区名称渲染
+  const areaName = drawAreaName(cq_land, 10, '#2d2d2d');
+  areaName.position.z = landDepth;
+  areaNameGroup.add(areaName);
+  // 建筑物渲染
+  const builds = drawBuild(cq_build, '#cccccc');
+  builds.position.z = landDepth;
+  buildGroup.add(builds);
+  // 道路渲染
   drawRoads('#777777');
-  // 绘制道路中线
+  // 道路中线渲染
   drawRoadLines('#bbbbbb');
-  // 绘制河流
+  // 河流渲染
   drawRivers('#075272');
   // 将物体移动到中标中心
   let boxInfo = new Box3().setFromObject(group);
@@ -503,22 +346,7 @@ onMounted(() => {
   group.translateY(-transformY);
   group.translateZ(-landDepth);
   animate();
-  document.body.addEventListener('mousewheel',  (event:any) =>{
-    const factor = camera.position.z / 20;
-    const x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    const y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-    // 这里定义深度值为0.5，深度值越大，意味着精度越高
-    var vector = new Vector3(x, y, 0.5 );
-    // 转换为3D空间坐标
-    vector.unproject(camera);
-    // 获得从相机指向鼠标所对应的3D空间点的射线
-    vector.sub( camera.position ).normalize();
-    camera.position.x += vector.x * factor * (event.deltaY / -100);
-    camera.position.y += vector.y * factor * (event.deltaY / -100);
-    controls.target.x += vector.x * factor * (event.deltaY / -100);
-    controls.target.y += vector.y * factor * (event.deltaY / -100);
-    controls.update();
-  });
+  zoomByMouse(camera, controls);
 })
 </script>
 <style lang="less">
