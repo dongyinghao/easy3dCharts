@@ -57,6 +57,8 @@ import {onMounted, ref, reactive, transformVNodeArgs} from "vue";
 import Tips from '@/components/Tips.vue';
 import {createSpotLight, ZoomToZ, ZtoZoom, loadTexture} from "@/utils/tools";
 import buildMap from "@/assets/images/build.jpg";
+import buildMap1 from "@/assets/images/build1.webp";
+import buildMap2 from "@/assets/images/build2.webp";
 import {Coordinate} from "@/utils/type";
 
 const scene:any = new Scene();
@@ -92,17 +94,18 @@ let cityListRef:any = ref();
 let tips = ref<string>('');
 let mousePosition:any = {x: 0, y: 0};
 
-// const load = new TextureLoader();
-// const texture = load.load(buildMap);
+const load = new TextureLoader();
+const texture = load.load(buildMap1);
 
 const handleClick = data => {
   targetPosition.set(data.centroid[0] * 1000 - transformX, data.centroid[1] * 1000 - transformY, 100);
   animateFlag = true;
+  controls.enabled = false;
 }
 
 // 相机
 const initCamera = () => {
-  camera = new PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 5000);
+  camera = new PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 50000);
   camera.position.set(0, 0, 500);
   scene.add(new AxesHelper(5000));
 }
@@ -121,7 +124,7 @@ const initRenderer = () => {
 // 初始化灯光
 const initLight = () => {
   const light = new DirectionalLight( 0xffffff);
-  light.position.set( 0, 1, 1 );
+  light.position.set( 0, -1, 1 );
   light.castShadow = true;
   scene.add(light, new AmbientLight(0X666666));
 
@@ -145,7 +148,6 @@ const drawMap = (data, color) => {
       }
     })
     const geometry = new ExtrudeGeometry(shape, {depth: landDepth, bevelEnabled: false});
-    // const geometry = new ShapeGeometry(shape);
     const material = new MeshLambertMaterial({color});
     const mesh = new Mesh(geometry,material);
     mesh.receiveShadow = true;
@@ -221,7 +223,7 @@ const drawBuild = (data, color) => {
     })
     const depth = Math.max(0.3,Number(Math.random().toFixed(2)));
     const geometry = new ExtrudeGeometry(shape, {depth, bevelEnabled: false});
-    // const material = loadTexture(buildMap);
+    // const material = new MeshLambertMaterial({color,map: texture});
     const material = new MeshLambertMaterial({color});
     const mesh = new Mesh(geometry,material);
     mesh.castShadow = true;
@@ -396,6 +398,7 @@ const animate = (event?) => {
     } else {
       console.log('动画完成');
       animateFlag = false;
+      controls.enabled = true;
       // if (zoom < 12 ) {
       //   mapLineGroup.visible = true;
       //   if (!mapLineGroup.children.length) drawMapLine(cq_land, '#666666');
@@ -412,7 +415,6 @@ const animate = (event?) => {
       //   drawBuild(cq_build, '#cccccc');
       // }
       // initControls(camera.position.x, camera.position.y, camera.position.z);
-      console.log(99999, controls.target.x,controls.target.y,controls.target.z);
     }
   }
   // 初始化时，不应该触发选中效果
@@ -494,13 +496,29 @@ onMounted(() => {
   drawRivers('#075272');
   // 将物体移动到中标中心
   let boxInfo = new Box3().setFromObject(group);
-  // group.rotateX(-Math.PI / 2);
+  // group.rotateX(-Math.PI / 4);
   transformX = (boxInfo.min.x + boxInfo.max.x) / 2;
   transformY = (boxInfo.min.y + boxInfo.max.y) / 2;
   group.translateX(-transformX);
   group.translateY(-transformY);
   group.translateZ(-landDepth);
   animate();
+  document.body.addEventListener('mousewheel',  (event:any) =>{
+    const factor = camera.position.z / 20;
+    const x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    const y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    // 这里定义深度值为0.5，深度值越大，意味着精度越高
+    var vector = new Vector3(x, y, 0.5 );
+    // 转换为3D空间坐标
+    vector.unproject(camera);
+    // 获得从相机指向鼠标所对应的3D空间点的射线
+    vector.sub( camera.position ).normalize();
+    camera.position.x += vector.x * factor * (event.deltaY / -100);
+    camera.position.y += vector.y * factor * (event.deltaY / -100);
+    controls.target.x += vector.x * factor * (event.deltaY / -100);
+    controls.target.y += vector.y * factor * (event.deltaY / -100);
+    controls.update();
+  });
 })
 </script>
 <style lang="less">
