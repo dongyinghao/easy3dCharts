@@ -9,9 +9,19 @@ import {
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { offset, a2r, r2a, l2a } from "@/utils/dpm";
-import { drawLine } from "@/utils/tools";
+// import PoliceStation from '@/assets/models/PoliceStation.glb'
+import { offset } from "@/utils/dpm";
+import { drawLine, loadGlb } from "@/utils/tools";
 import {onMounted} from "vue";
+
+const builds = {
+  house0: loadGlb('/models/house0.glb'),
+  house1: loadGlb('/models/house1.glb'),
+  house2: loadGlb('/models/house2.glb'),
+  house3: loadGlb('/models/house3.glb'),
+  house4: loadGlb('/models/house4.glb'),
+  house5: loadGlb('/models/house5.glb'),
+}
 
 const scene:any = new Scene();
 const box:any = new Group();
@@ -23,6 +33,7 @@ let renderer:any = null;
 let controls:any = null;
 let mixer:any = null;
 let sphere:any = null;
+
 
 // 鼠标控制器
 const initControls = () => {
@@ -170,42 +181,27 @@ const animate = () => {
   // mixer.update(clock.getDelta());
 }
 
-const test = () => {
-  const loader = new GLTFLoader().setPath( './models/gltf/' );
 
-  loader.load( 'collision-world.glb', ( gltf ) => {
 
-    scene.add( gltf.scene );
 
-    worldOctree.fromGraphNode( gltf.scene );
 
-    gltf.scene.traverse( child => {
-
-      if ( child.isMesh ) {
-
-        child.castShadow = true;
-        child.receiveShadow = true;
-
-        if ( child.material.map ) {
-
-          child.material.map.anisotropy = 8;
-
-        }
-
-      }
-
-    } );
-
-    animate();
-
-  } );
-
+const loadGlbs1 = async () => {
+  for(let i = 0; i < 6; i++) {
+    const a = await builds['house' + i]
+    const mesh = a.scene.clone();
+    mesh.position.x = 30 * i;
+    mesh.position.z = 30;
+    scene.add(mesh)
+  }
 }
+
+loadGlbs1()
 
 
 onMounted(() => {
   init();
   initControls();
+  // loadGlbs1();
   // initAnimat();
   animate();
 

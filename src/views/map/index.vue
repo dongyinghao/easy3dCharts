@@ -10,20 +10,13 @@ import {
   AmbientLight,
   AxesHelper,
   Box3,
-  BoxGeometry,
   Color,
   DirectionalLight,
-  DoubleSide,
   ExtrudeGeometry,
   Group,
   Mesh,
-  MeshLambertMaterial,
-  MeshStandardMaterial,
-  Object3D,
-  Path,
   PCFSoftShadowMap,
   PerspectiveCamera,
-  PlaneGeometry,
   PointLight,
   PointLightHelper,
   Raycaster,
@@ -32,15 +25,27 @@ import {
   ShapeGeometry,
   SpotLight,
   SpotLightHelper,
-  TextureLoader,
   Vector3,
   WebGLRenderer,
   Vector2,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 // import { MapControls } from 'three/examples/jsm/controls/OrbitControls.js'
+// 重庆地图
 import { data as cq_land } from "@/assets/map/cq";
-import { data as cq_build } from "@/assets/map/cq_build";
+// 建筑物
+import { data as yuzhongBuild } from "@/assets/map/build/yuzhong";
+import { data as jiangbeiBuild } from "@/assets/map/build/jiangbei";
+import { data as nananBuild } from "@/assets/map/build/nanan";
+import { data as kaizhouBuild } from "@/assets/map/build/kaizhou";
+import { data as bananBuild } from "@/assets/map/build/banan";
+import { data as shapingbaBuild } from "@/assets/map/build/shapingba";
+import { data as dadukouBuild } from "@/assets/map/build/dadukou";
+import { data as jiulongpoBuild } from "@/assets/map/build/jiulongpo";
+import { data as beibeiBuild } from "@/assets/map/build/beibei";
+import { data as hechuanBuild } from "@/assets/map/build/hechuan";
+import { data as yubeiBuild } from "@/assets/map/build/yubei";
+// 河流
 import { data as yangtzeRiver } from "@/assets/map/river/yangtzeRiver";
 import { data as hechuanRiver } from "@/assets/map/river/hechuan";
 import { data as jiangjinRiver } from "@/assets/map/river/jiangjin";
@@ -48,6 +53,7 @@ import { data as nananRiver } from "@/assets/map/river/nanan";
 import { data as bananRiver } from "@/assets/map/river/banan";
 import { data as shapingbaRiver } from "@/assets/map/river/shapingba";
 import { data as yubeiRiver } from "@/assets/map/river/yubei";
+// 道路
 import { data as yuzhongRoad } from "@/assets/map/road/yuzhong";
 import { data as nananRoad } from "@/assets/map/road/nanan";
 import { data as jiangbeiRoad } from "@/assets/map/road/jiangbei";
@@ -55,11 +61,10 @@ import { data as yubeiRoad } from "@/assets/map/road/yubei";
 import { throttle, ZtoZoom } from "@/utils/dpm";
 import { onMounted, ref, reactive, transformVNodeArgs } from "vue";
 import Tips from '@/components/Tips.vue';
-import { zoomByMouse, drawRoadPlane, drawRoadLine, drawRiver, drawBuild, drawMapLine, drawMapPlane, drawAreaName } from "@/utils/tools";
-import buildMap from "@/assets/images/build.jpg";
-import buildMap1 from "@/assets/images/build1.webp";
-import buildMap2 from "@/assets/images/build2.webp";
-import {Camera} from "_@types_three@0.141.0@@types/three/src/cameras/Camera";
+import { zoomByMouse, drawRoadPlane, drawRoadLine, drawRiver, drawBuild, drawMapLine, drawMapPlane, drawAreaName, loadGlb } from "@/utils/tools";
+// import buildMap from "@/assets/images/build.jpg";
+// import buildMap1 from "@/assets/images/build1.webp";
+// import buildMap2 from "@/assets/images/build2.webp";
 
 const scene = new Scene();
 const group = new Group();
@@ -96,9 +101,6 @@ let cityListRef = ref();
 let tips = ref<string>('');
 let mousePosition = {x: 0, y: 0};
 
-const load = new TextureLoader();
-const texture = load.load(buildMap1);
-
 const handleClick = data => {
   targetPosition.set(data.centroid[0] * 1000 - transformX, data.centroid[1] * 1000 - transformY, 100);
   animateFlag = true;
@@ -129,7 +131,7 @@ const initLight = () => {
   const light = new DirectionalLight( 0xffffff);
   light.position.set( 0, 1, 1 );
   light.castShadow = true;
-  scene.add(light, new AmbientLight(0X555555));
+  scene.add(light, new AmbientLight(0X666666));
 
   // const light = new PointLight( 0xffffff);
   // light.position.set( -1500, -450, 300 );
@@ -197,6 +199,7 @@ const selectedProcess = (intersects) => {
   }
 }
 
+// 动画
 const animate = (event?) => {
   requestAnimationFrame(animate);
   camera.updateProjectionMatrix();
@@ -248,71 +251,62 @@ const initControls = () => {
   controls.addEventListener('change',throttle(() => {
     zoom = ZtoZoom(camera.position.z);
     console.log('当前缩放比例',zoom);
-    // if (!animateFlag){
-    buildGroup.visible = zoom < 5;
+    buildGroup.visible = zoom < 9;
     areaNameGroup.visible = zoom > 5;
     roadGroup.visible = zoom < 7;
     riverGroup.visible = zoom < 9;
-    // if (zoom > 9 && areaNameGroup.currentValue === 3) {
-    //   drawMapName(cq_land, 12, '#2d2d2d');
-    // }
-    // if (zoom <= 9 && areaNameGroup.currentValue === 12) {
-    //   drawMapName(cq_land, 3, '#2d2d2d');
-    // }
-    // }
   }, 500))
 };
+
+// 渲染建筑物(白模)
+const drawBuilds = (color) => {
+  const yuzhong = drawBuild(yuzhongBuild, '#cccccc');
+  const hechuan = drawBuild(hechuanBuild, '#cccccc');
+  const nanan = drawBuild(nananBuild, '#cccccc');
+  const dadukou = drawBuild(dadukouBuild, '#cccccc');
+  const jiangbei = drawBuild(jiangbeiBuild, '#cccccc');
+  const yubei = drawBuild(yubeiBuild, '#cccccc');
+  const kaizhou = drawBuild(kaizhouBuild, '#cccccc');
+  const banan = drawBuild(bananBuild, '#cccccc');
+  const jiulongpo = drawBuild(jiulongpoBuild, '#cccccc');
+  const beibei = drawBuild(beibeiBuild, '#cccccc');
+  const shapingba = drawBuild(shapingbaBuild, '#cccccc');
+  buildGroup.position.z = landDepth;
+  buildGroup.add(yuzhong, hechuan, nanan, banan, kaizhou, jiulongpo, shapingba, beibei,shapingba, dadukou, jiangbei);
+}
 
 // 道路渲染
 const drawRoads = (color) => {
   const yuzhong:Group = drawRoadPlane(yuzhongRoad, color);
-  yuzhong.position.z = landDepth + 0.015;
   const nanan:Group = drawRoadPlane(nananRoad, color);
-  nanan.position.z = landDepth + 0.015;
   const jiangbei:Group = drawRoadPlane(jiangbeiRoad, color);
-  jiangbei.position.z = landDepth + 0.015;
   const yubei:Group = drawRoadPlane(yubeiRoad, color);
-  yubei.position.z = landDepth + 0.015;
+  roadGroup.position.z = landDepth + 0.018;
   roadGroup.add( yuzhong, nanan, jiangbei, yubei );
 }
 
 // 道路中线渲染
 const drawRoadLines = (color) => {
   const yuzhong:Group = drawRoadLine(yuzhongRoad, color);
-  yuzhong.position.z = landDepth;
   const nanan:Group = drawRoadLine(nananRoad, color);
-  nanan.position.z = landDepth;
   const jiangbei:Group = drawRoadLine(jiangbeiRoad, color);
-  jiangbei.position.z = landDepth;
   const yubei:Group = drawRoadLine(yubeiRoad, color);
-  yubei.position.z = landDepth;
+  roadGroup.position.z = landDepth + 0.03;
   roadGroup.add( yuzhong, nanan, jiangbei, yubei );
 }
 
 // 河流渲染
 const drawRivers = (color) => {
-  // 长江
   const yangtze:Group = drawRiver(yangtzeRiver, color);
   yangtze.position.z = landDepth + 0.01;
   yangtzeRiverGroup.add(yangtze);
-  // 江津
   const jiangjin:Group = drawRiver(jiangjinRiver, color);
-  jiangjin.position.z = landDepth + 0.01;
-  // 合川
   const hechuan:Group = drawRiver(hechuanRiver, color);
-  hechuan.position.z = landDepth + 0.01;
-  // 渝北
   const yubei:Group = drawRiver(yubeiRiver, color);
-  yubei.position.z = landDepth + 0.01;
-  // 南岸
   const nanan:Group = drawRiver(nananRiver, color);
-  nanan.position.z = landDepth + 0.01;
-  // 巴南
   const banan:Group = drawRiver(bananRiver, color);
-  banan.position.z = landDepth + 0.01;
-  // 沙坪坝
   const shapingba:Group = drawRiver(shapingbaRiver, color);
-  shapingba.position.z = landDepth + 0.01;
+  riverGroup.position.z = landDepth + 0.01;
   riverGroup.add(shapingba, banan, nanan, jiangjin, yubei, hechuan);
 }
 
@@ -333,9 +327,7 @@ onMounted(() => {
   areaName.position.z = landDepth;
   areaNameGroup.add(areaName);
   // 建筑物渲染
-  const builds = drawBuild(cq_build, '#cccccc');
-  builds.position.z = landDepth;
-  buildGroup.add(builds);
+  drawBuilds('#cccccc');
   // 道路渲染
   drawRoads('#777777');
   // 道路中线渲染
@@ -354,6 +346,7 @@ onMounted(() => {
   zoomByMouse(camera, controls);
 })
 </script>
+
 <style lang="less">
 .cityBox {
   position: fixed;

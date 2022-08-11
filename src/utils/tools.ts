@@ -7,6 +7,7 @@ import { Coordinate, LineOpt, Text } from './type.d';
 import { offset } from "@/utils/dpm";
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import {GLTFLoader} from "_three@0.142.0@three/examples/jsm/loaders/GLTFLoader";
 
 // 文字创建
 export const createText = (data:Text, callback:any) => {
@@ -77,6 +78,16 @@ export const loadTexture = (url:string):MeshLambertMaterial => {
   });
 }
 
+// 模型加载器
+export const loadGlb = async (url:string) => {
+  return await new Promise((resolve, reject) => {
+    const loader = new GLTFLoader();
+    loader.load( url, ( gltf ) => {
+      resolve(gltf);
+    });
+  })
+}
+
 // 根据鼠标位置缩放场景
 export const zoomByMouse = (camera:PerspectiveCamera, controls:OrbitControls) => {
   document.body.addEventListener('mousewheel',  (event:any) =>{
@@ -142,7 +153,7 @@ export const drawRoadLine = (data, color:string|number, group?:Group):Group => {
     const arrayList = it.geometry.coordinates[0];
     const array:number[] = [];
     arrayList.forEach(t => {
-      array.push(t[0] * 1000, t[1] *1000, 0.02)
+      array.push(t[0] * 1000, t[1] *1000, 0)
     })
     const mesh = drawLine(array, {color});
     mesh.userData = it.properties;
@@ -189,6 +200,38 @@ export const drawRiver = (data, color:string|number, group?:Group):Group => {
   return myGroup;
 }
 
+// 建筑模型
+const builds = {
+  house0: loadGlb('/models/house0.glb'),
+  house1: loadGlb('/models/house1.glb'),
+  house2: loadGlb('/models/house2.glb'),
+  house3: loadGlb('/models/house3.glb'),
+  house4: loadGlb('/models/house4.glb'),
+  house5: loadGlb('/models/house5.glb'),
+}
+const addBuild = async (data, coord:number[], group) => {
+  const i = Math.floor(Math.random() * 6);
+  const obj = await builds['house' + i];
+  const mesh = obj.scene.clone();
+  mesh.position.x = coord[0];
+  mesh.position.y = coord[1];
+  if (i === 0) {
+    mesh.scale.set(3, 3, 3);
+  } else if (i === 1) {
+    mesh.scale.set(0.6, 0.6, 0.6);
+  } else if (i === 2) {
+    mesh.scale.set(0.15, 0.15, 0.15);
+  } else if (i === 3) {
+    mesh.scale.set(0.08, 0.08, 0.08);
+  } else if (i === 4) {
+    mesh.scale.set(0.02, 0.02, 0.02);
+  } else if (i === 5){
+    mesh.scale.set(0.07, 0.07, 0.07);
+  }
+  mesh.rotateX(Math.PI / 2);
+  group.add(mesh);
+}
+
 // 绘制建筑物
 export const drawBuild = (data, color:string|number, group?:Group):Group => {
   const myGroup = new Group();
@@ -205,14 +248,18 @@ export const drawBuild = (data, color:string|number, group?:Group):Group => {
     })
     const depth = Math.max(0.3,Number(Math.random().toFixed(2)));
     const geometry = new ExtrudeGeometry(shape, {depth, bevelEnabled: false});
-    // const material = new MeshLambertMaterial({color,map: texture});
     const material = new MeshLambertMaterial({color});
     const mesh = new Mesh(geometry,material);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    mesh.userData = it.properties;
-    if (group) group.add(mesh);
-    myGroup.add(mesh);
+    if(it.properties.name) {
+      let boxInfo = new Box3().setFromObject(mesh);
+      addBuild(it,[(boxInfo.min.x + boxInfo.max.x) / 2, (boxInfo.min.y + boxInfo.max.y) / 2], myGroup);
+    } else {
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.userData = it.properties;
+      if (group) group.add(mesh);
+      myGroup.add(mesh);
+    }
   })
   return myGroup;
 }
@@ -230,19 +277,6 @@ export const drawMapLine = (data, color:string|number, group?:Group):Group => {
     array.push(arrayList[0][0] * 1000,arrayList[0][1] * 1000, 0.1)
     const mesh = drawLine(array, {color, type: 'dashed'});
     mesh.userData = it.properties;
-    // if (it.properties.name) {
-    //   createText({
-    //     font: it.properties.name,
-    //     size: 12,
-    //     height: 0.3,
-    //     x: it.properties.centroid[0] * 1000,
-    //     y: it.properties.centroid[1] * 1000,
-    //     z: landDepth + 0.2,
-    //     color: '#2d2d2d',
-    //   }, text => {
-    //     areaNameGroup.add(text);
-    //   });
-    // }
     if (group) group.add(mesh);
     myGroup.add(mesh);
   })

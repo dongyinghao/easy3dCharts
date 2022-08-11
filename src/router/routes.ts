@@ -4,7 +4,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Index',
-    component: () => import('@/views/index/index.vue'),
+    component: () => import('@/views/map/index.vue'),
     meta: {
       requireAuth: false,
       title: '首页',
@@ -22,9 +22,9 @@ const routes: RouteRecordRaw[] = [
       requireAuth: false }
   },
   {
-    path: '/map',
+    path: '/bar',
     name: 'Map',
-    component: () => import('@/views/map/index.vue'),
+    component: () => import('@/views/bar/index.vue'),
     meta: {
       title: '测试',
       requireAuth: false }
