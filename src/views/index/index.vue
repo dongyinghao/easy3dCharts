@@ -10,7 +10,8 @@ import {
   AmbientLight, WebGLRenderer, Vector3, Vector2, BoxGeometry, SphereGeometry
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { createText, initLabelZ, drawLine, initLabelX, throttle, generateParams } from '@/utils/dpm';
+import { initLabelZ, initLabelX, throttle, generateParams } from '@/utils/dpm';
+import { createText, drawLine } from '@/utils/tools';
 import {ChartConfig, ChartParams, spaceConfig} from '@/utils/type.d';
 import Tips from '@/components/Tips.vue';
 
@@ -526,11 +527,11 @@ const drawXZTip = (data:ChartConfig, pointer, c:ChartParams) => {
       planTip.getObjectByName('lineTipV').position.y = y;
     } else {
       // 绘制X轴
-      const lineH = drawLine([-c.bx/2, 0, 0, c.bx/2, 0, 0], '#00ff00');
+      const lineH = drawLine([-c.bx/2, 0, 0, c.bx/2, 0, 0], {color: '#00ff00'});
       lineH.position.x = c.bx / 2
       lineH.name = 'lineTipH';
       // 绘制Y轴
-      const lineV = drawLine([0, 0, 0, 0, 0, c.bz], '#00ff00');
+      const lineV = drawLine([0, 0, 0, 0, 0, c.bz], {color: '#00ff00'});
       lineV.name = 'lineTipV';
       planTip.add(lineH, lineV);
     }

@@ -52,45 +52,49 @@ import { data as yuzhongRoad } from "@/assets/map/road/yuzhong";
 import { data as nananRoad } from "@/assets/map/road/nanan";
 import { data as jiangbeiRoad } from "@/assets/map/road/jiangbei";
 import { data as yubeiRoad } from "@/assets/map/road/yubei";
-import { throttle } from "@/utils/dpm";
+import { throttle, ZtoZoom } from "@/utils/dpm";
 import { onMounted, ref, reactive, transformVNodeArgs } from "vue";
 import Tips from '@/components/Tips.vue';
-import { ZtoZoom, zoomByMouse, drawRoadPlane, drawRoadLine, drawRiver, drawBuild, drawMapLine, drawMapPlane, drawAreaName } from "@/utils/tools";
+import { zoomByMouse, drawRoadPlane, drawRoadLine, drawRiver, drawBuild, drawMapLine, drawMapPlane, drawAreaName } from "@/utils/tools";
 import buildMap from "@/assets/images/build.jpg";
 import buildMap1 from "@/assets/images/build1.webp";
 import buildMap2 from "@/assets/images/build2.webp";
+import {Camera} from "_@types_three@0.141.0@@types/three/src/cameras/Camera";
 
-const scene:any = new Scene();
-const group:any = new Group();
-const mapGroup:any = new Group();
-mapGroup.receiveShaow = true;
-const mapLineGroup:any = new Group();
-const buildGroup:any = new Group();
+const scene = new Scene();
+const group = new Group();
+// 存放可选元素
+const selectAbleGroup = new Group();
+const mapGroup = new Group();
+const mapLineGroup = new Group();
+const buildGroup = new Group();
 buildGroup.visible = false;
-const yangtzeRiverGroup:any = new Group();
-const riverGroup:any = new Group();
+const yangtzeRiverGroup = new Group();
+const riverGroup = new Group();
 riverGroup.visible = false;
-const roadGroup:any = new Group();
-let areaNameGroup:any = new Group();
-group.add(mapGroup, buildGroup, riverGroup, roadGroup, mapLineGroup, yangtzeRiverGroup, areaNameGroup);
+const roadGroup = new Group();
+let areaNameGroup = new Group();
+selectAbleGroup.add(mapGroup, buildGroup);
+group.add(selectAbleGroup, roadGroup, mapLineGroup, areaNameGroup, riverGroup, yangtzeRiverGroup);
 scene.add(group);
 scene.background = new Color( 0x111111 );
-let camera:any = null;
-let renderer:any = null;
-let controls:any = null;
-let raycaster:any = null;
-let mouse:any = null;
-let interSected:any = null;
+let camera:PerspectiveCamera;
+let renderer: WebGLRenderer;
+let controls;
+let raycaster;
+let mouse:Vector2 = new Vector2();
+let interSected;
 let landDepth:number = 100;
 let transformX:number = 0;
 let transformY:number = 0;
 let zoom:number = 2.5;
+// 当前地图是否在执行动画
 let animateFlag:boolean = false;
-let targetPosition:any = new Vector3(0,0,0);
-let tipsRef:any = ref();
-let cityListRef:any = ref();
+let targetPosition:Vector3 = new Vector3(0,0,0);
+let tipsRef = ref();
+let cityListRef = ref();
 let tips = ref<string>('');
-let mousePosition:any = {x: 0, y: 0};
+let mousePosition = {x: 0, y: 0};
 
 const load = new TextureLoader();
 const texture = load.load(buildMap1);
@@ -135,7 +139,6 @@ const initLight = () => {
 // 移入、点击事件
 const initEvent = () => {
   raycaster = new Raycaster();
-  mouse = new Vector2();
   const onDocumnetMouseMove = (event:MouseEvent) => {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -226,13 +229,14 @@ const animate = (event?) => {
       // if (zoom < 5 ) {
       //   drawBuild(cq_build, '#cccccc');
       // }
-      // initControls(camera.position.x, camera.position.y, camera.position.z);
+      // initControls();
     }
   }
+
   // 初始化时，不应该触发选中效果
   if (mouse.x === 0 && mouse.y === 0) return;
   raycaster.setFromCamera(mouse, camera);
-  let intersects = raycaster.intersectObject(group);
+  let intersects = raycaster.intersectObject(selectAbleGroup);
   selectedProcess(intersects);
 }
 
@@ -261,26 +265,26 @@ const initControls = () => {
 
 // 道路渲染
 const drawRoads = (color) => {
-  const yuzhong:any = drawRoadPlane(yuzhongRoad, color);
+  const yuzhong:Group = drawRoadPlane(yuzhongRoad, color);
   yuzhong.position.z = landDepth + 0.015;
-  const nanan:any = drawRoadPlane(nananRoad, color);
+  const nanan:Group = drawRoadPlane(nananRoad, color);
   nanan.position.z = landDepth + 0.015;
-  const jiangbei:any = drawRoadPlane(jiangbeiRoad, color);
+  const jiangbei:Group = drawRoadPlane(jiangbeiRoad, color);
   jiangbei.position.z = landDepth + 0.015;
-  const yubei:any = drawRoadPlane(yubeiRoad, color);
+  const yubei:Group = drawRoadPlane(yubeiRoad, color);
   yubei.position.z = landDepth + 0.015;
   roadGroup.add( yuzhong, nanan, jiangbei, yubei );
 }
 
 // 道路中线渲染
 const drawRoadLines = (color) => {
-  const yuzhong:any = drawRoadLine(yuzhongRoad, color);
+  const yuzhong:Group = drawRoadLine(yuzhongRoad, color);
   yuzhong.position.z = landDepth;
-  const nanan:any = drawRoadLine(nananRoad, color);
+  const nanan:Group = drawRoadLine(nananRoad, color);
   nanan.position.z = landDepth;
-  const jiangbei:any = drawRoadLine(jiangbeiRoad, color);
+  const jiangbei:Group = drawRoadLine(jiangbeiRoad, color);
   jiangbei.position.z = landDepth;
-  const yubei:any = drawRoadLine(yubeiRoad, color);
+  const yubei:Group = drawRoadLine(yubeiRoad, color);
   yubei.position.z = landDepth;
   roadGroup.add( yuzhong, nanan, jiangbei, yubei );
 }
@@ -288,26 +292,26 @@ const drawRoadLines = (color) => {
 // 河流渲染
 const drawRivers = (color) => {
   // 长江
-  const yangtze:any = drawRiver(yangtzeRiver, color);
+  const yangtze:Group = drawRiver(yangtzeRiver, color);
   yangtze.position.z = landDepth + 0.01;
   yangtzeRiverGroup.add(yangtze);
   // 江津
-  const jiangjin:any = drawRiver(jiangjinRiver, color);
+  const jiangjin:Group = drawRiver(jiangjinRiver, color);
   jiangjin.position.z = landDepth + 0.01;
   // 合川
-  const hechuan:any = drawRiver(hechuanRiver, color);
+  const hechuan:Group = drawRiver(hechuanRiver, color);
   hechuan.position.z = landDepth + 0.01;
   // 渝北
-  const yubei:any = drawRiver(yubeiRiver, color);
+  const yubei:Group = drawRiver(yubeiRiver, color);
   yubei.position.z = landDepth + 0.01;
   // 南岸
-  const nanan:any = drawRiver(nananRiver, color);
+  const nanan:Group = drawRiver(nananRiver, color);
   nanan.position.z = landDepth + 0.01;
   // 巴南
-  const banan:any = drawRiver(bananRiver, color);
+  const banan:Group = drawRiver(bananRiver, color);
   banan.position.z = landDepth + 0.01;
   // 沙坪坝
-  const shapingba:any = drawRiver(shapingbaRiver, color);
+  const shapingba:Group = drawRiver(shapingbaRiver, color);
   shapingba.position.z = landDepth + 0.01;
   riverGroup.add(shapingba, banan, nanan, jiangjin, yubei, hechuan);
 }
@@ -319,10 +323,11 @@ onMounted(() => {
   initEvent();
   // 地图渲染
   const mapPlane = drawMapPlane(cq_land, 0x999999, landDepth);
+  mapGroup.add(mapPlane);
   // 地图轮廓线渲染
   const mapLine = drawMapLine(cq_land, '#000000');
   mapLine.position.z = landDepth;
-  mapGroup.add(mapLine, mapPlane);
+  mapLineGroup.add(mapLine);
   // 地区名称渲染
   const areaName = drawAreaName(cq_land, 10, '#2d2d2d');
   areaName.position.z = landDepth;

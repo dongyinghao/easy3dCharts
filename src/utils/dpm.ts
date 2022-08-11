@@ -1,36 +1,5 @@
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
-import { BufferGeometry, Line, LineBasicMaterial, BufferAttribute, MeshLambertMaterial, Mesh, Box3, LineDashedMaterial, TextureLoader } from 'three';
-import { Text, ChartConfig, ChartParams, Nb, LineOpt } from './type.d';
-
-// 文字创建
-export const createText = (data:Text, callback:any) => {
-  const loader = new FontLoader();
-  loader.load( '/fonts/XinGothicGB.json', fonts => {
-    const {font, size=3, height=0.5, x=0, y=0, z=0, rotate=0, color='#ffffff'} = data;
-    const textGeo:any = new TextGeometry( font, {
-      font: fonts,
-      size,
-      height,
-      curveSegments: 1,
-      bevelThickness: 1,
-    } );
-    textGeo.computeBoundingBox();
-    const textMaterial = new MeshLambertMaterial({ color });
-    const mesh = new Mesh( textGeo, textMaterial );
-    mesh.position.x = x;
-    mesh.position.y = y;
-    mesh.position.z = z;
-    mesh.rotateX(rotate);
-    // 获取字体的外轮廓，从而得到字体的长度
-    let box= new Box3().setFromObject(mesh);
-    // 字体对齐方式默认为左对齐，此处设为中心对齐
-    mesh.translateX(-(box.max.x - box.min.x) / 2);
-    mesh.translateY(-(box.max.y - box.min.y) / 2);
-    mesh.translateZ(-(box.max.z - box.min.z) / 2);
-    callback(mesh);
-  });
-}
+import { ChartConfig, ChartParams, Nb,  } from './type.d';
+import { createText, drawLine } from './tools';
 
 // 找到合适的纵轴步距
 export const findStepY = (data) => {
@@ -148,22 +117,6 @@ export const drawGridBySize = (color:string, w:number, h:number, countX:number, 
   }
 };
 
-// 绘制一条直线
-export const drawLine = (array, opt?:LineOpt) => {
-  let material;
-  if (opt?.type === 'dashed') {
-    material = new LineDashedMaterial({color: opt ? opt.color : '#ffffff', dashSize: 1, gapSize: 2});
-  } else {
-    material = new LineBasicMaterial( {color: opt ? opt.color : '#ffffff'} );
-  }
-  const geometry = new BufferGeometry();
-  const vertice = new Float32Array( array );
-  geometry.setAttribute( 'position', new BufferAttribute( vertice, 3 ) );
-  const mesh = new Line( geometry, material );
-  mesh.computeLineDistances();
-  return mesh
-}
-
 // 节流
 export const throttle = (fn:Function, time:number) => {
   let timeId:any = null;
@@ -213,6 +166,39 @@ export const r2a = (r:number):number => 180 * r / Math.PI;
 
 // 计算线段(p1->p2)和x轴的夹角(得到弧度单位)
 export const l2a = (p1:number[], p2:number[]):number => Math.atan2(p2[1]-p1[1], p2[0]-p1[0]);
+
+
+// 根据相机高度获取当前的缩放因子
+export const ZtoZoom = (n:number):number => {
+  const zoomMap = {3: 1, 5: 2, 10: 3, 30: 4, 50: 5, 100: 6, 150: 7, 300: 8, 500: 9, 1000: 10, 1500: 11, 2000: 12, 2500: 13};
+  let prev = 1;
+  for(let key in zoomMap) {
+    let zoom = Number(key);
+    if (n <= zoom) {
+      const step = zoom - prev;
+      const diff = n - prev;
+      return zoomMap[zoom] + Number((diff / step).toFixed(1));
+    }
+    prev = zoom;
+  }
+  return 14
+}
+
+// 根据缩放因子获取相机高度
+export const ZoomToZ = (n:number):number => {
+  const zoomMap = {3: 1, 5: 2, 10: 3, 30: 4, 50: 5, 100: 6, 150: 7, 300: 8, 500: 9, 1000: 10, 1500: 11, 2000: 12, 2500: 13};
+  let prev = 1;
+  for(let key in zoomMap) {
+    let zoom = zoomMap[key];
+    if (n <= zoom) {
+      const step = zoom - n;
+      const diff = Number(key) - prev;
+      return Number(key) - Number((diff * step).toFixed(1));
+    }
+    prev = Number(key);
+  }
+  return 14
+}
 
 // 计算平面折线段的偏移坐标,d:偏移距离,t:偏移方向
 export const offset = (p1:number[], p2:number[], d:number, t?:Nb):number[][] => {

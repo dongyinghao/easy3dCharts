@@ -3,7 +3,7 @@ export interface Text {
   font: string,
   size?: number,
   height?: number,
-  color?: string,
+  color?: string | number | undefined,
   y?: number,
   x?: number,
   z?: number,

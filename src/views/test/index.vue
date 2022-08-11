@@ -7,8 +7,10 @@ import {
   MeshStandardMaterial,BoxGeometry,OrthographicCamera,PointLight,PointLightHelper,Shape,ShapeGeometry,Box3, Vector3,
   WebGLRenderer, AxesHelper, MeshLambertMaterial, Color, KeyframeTrack, AnimationClip, AnimationMixer, Object3D, SpotLight, SpotLightHelper, MeshPhongMaterial, DirectionalLightHelper
 } from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { drawLine, offset, a2r, r2a, l2a } from "@/utils/dpm";
+import { offset, a2r, r2a, l2a } from "@/utils/dpm";
+import { drawLine } from "@/utils/tools";
 import {onMounted} from "vue";
 
 const scene:any = new Scene();
@@ -54,7 +56,6 @@ const init = () => {
   if (canvas.length) document.body.removeChild(canvas[0]);
   document.body.appendChild(renderer.domElement);
 }
-
 
 const drawLines = () => {
   const arrayList = [ [ 106.6574131, 29.6109968 ], [ 106.6582647, 29.6116778 ], [ 106.6583254, 29.6117141 ], [ 106.6583481, 29.611719 ], [ 106.6584183, 29.6117338 ], [ 106.6584657, 29.6117174 ], [ 106.658534, 29.611686 ], [ 106.6586288, 29.6116596 ], [ 106.6586744, 29.611658 ], [ 106.6587199, 29.6116728 ], [ 106.6589645, 29.6119894 ], [ 106.6589854, 29.6120356 ], [ 106.6589702, 29.6120735 ], [ 106.6583633, 29.612428 ], [ 106.6579731, 29.6126941 ], [ 106.6576794, 29.6128944 ], [ 106.6575801, 29.6129433 ], [ 106.657505, 29.612948 ], [ 106.6573979, 29.6129104 ], [ 106.6564431, 29.6118471 ], [ 106.6558693, 29.6111023 ], [ 106.6552194, 29.6103919 ], [ 106.6540215, 29.6094772 ], [ 106.6527518, 29.6085077 ], [ 106.6510679, 29.6070992 ], [ 106.650252, 29.6066794 ], [ 106.6497799, 29.6066794 ], [ 106.6494795, 29.6067074 ], [ 106.6491904, 29.606894 ], [ 106.6492011, 29.6070619 ], [ 106.6500165, 29.6074443 ], [ 106.6502122, 29.607614 ], [ 106.6503843, 29.6079578 ], [ 106.6505739, 29.6082035 ], [ 106.6508338, 29.6084591 ], [ 106.6511752, 29.6089059 ], [ 106.6513591, 29.6090247 ], [ 106.6521007, 29.6093627 ], [ 106.6521936, 29.6094814 ], [ 106.6523454, 29.6097106 ], [ 106.6524156, 29.6097535 ], [ 106.6524933, 29.6097716 ], [ 106.6525768, 29.6097667 ], [ 106.6527152, 29.6097419 ], [ 106.6528176, 29.6097436 ], [ 106.6529466, 29.6097898 ], [ 106.6531647, 29.6100305 ], [ 106.6533923, 29.6103108 ], [ 106.6534795, 29.6103834 ], [ 106.6535877, 29.6104526 ], [ 106.6536844, 29.6104939 ], [ 106.6537489, 29.6105615 ], [ 106.6537925, 29.6106274 ], [ 106.6539822, 29.6109341 ], [ 106.654077, 29.6110199 ], [ 106.654168, 29.6111139 ], [ 106.6542932, 29.6112491 ], [ 106.6546567, 29.6117236 ], [ 106.6549134, 29.6120587 ], [ 106.6553003, 29.6124462 ], [ 106.6558522, 29.6131436 ], [ 106.6560798, 29.6134256 ], [ 106.6562296, 29.6135592 ], [ 106.6565122, 29.6137323 ], [ 106.6566791, 29.6138494 ], [ 106.6569864, 29.6141857 ], [ 106.6574643, 29.6147331 ], [ 106.6578209, 29.615119 ], [ 106.6578835, 29.6152426 ], [ 106.6579214, 29.6153762 ], [ 106.6580238, 29.6155839 ], [ 106.6580864, 29.6156433 ], [ 106.6582723, 29.6158544 ], [ 106.6582931, 29.6159121 ], [ 106.6583026, 29.615978 ], [ 106.6583178, 29.6160522 ], [ 106.6582988, 29.6161149 ], [ 106.65824, 29.6162831 ], [ 106.6582287, 29.6163523 ], [ 106.6582438, 29.6164595 ], [ 106.6583709, 29.616659 ], [ 106.6584961, 29.6168981 ], [ 106.6586664, 29.6172502 ], [ 106.6586933, 29.6173696 ], [ 106.6586383, 29.6174224 ], [ 106.6585814, 29.6174488 ], [ 106.6583804, 29.617462 ], [ 106.6582552, 29.6174174 ], [ 106.6580276, 29.6172756 ], [ 106.6578778, 29.6172179 ], [ 106.6575174, 29.6171652 ], [ 106.6572557, 29.6171272 ], [ 106.6571931, 29.6170827 ], [ 106.6571305, 29.6170184 ], [ 106.6570717, 29.6169228 ], [ 106.6570395, 29.616781 ], [ 106.6569921, 29.6167117 ], [ 106.6569124, 29.6166623 ], [ 106.6566905, 29.6165386 ], [ 106.6565217, 29.6163589 ], [ 106.6562827, 29.6161215 ], [ 106.6559926, 29.616039 ], [ 106.6558579, 29.6159335 ], [ 106.6558351, 29.6158675 ], [ 106.6556284, 29.6153416 ], [ 106.655545, 29.6152261 ], [ 106.6552946, 29.6148799 ] ];
@@ -169,41 +170,45 @@ const animate = () => {
   // mixer.update(clock.getDelta());
 }
 
+const test = () => {
+  const loader = new GLTFLoader().setPath( './models/gltf/' );
+
+  loader.load( 'collision-world.glb', ( gltf ) => {
+
+    scene.add( gltf.scene );
+
+    worldOctree.fromGraphNode( gltf.scene );
+
+    gltf.scene.traverse( child => {
+
+      if ( child.isMesh ) {
+
+        child.castShadow = true;
+        child.receiveShadow = true;
+
+        if ( child.material.map ) {
+
+          child.material.map.anisotropy = 8;
+
+        }
+
+      }
+
+    } );
+
+    animate();
+
+  } );
+
+}
+
+
 onMounted(() => {
   init();
   initControls();
   // initAnimat();
   animate();
-  document.body.addEventListener('mousewheel', function ( event:any ){
-    var factor = 1;
-    //将鼠标的屏幕坐标转换为NDC坐标
-    var mX = ( event.clientX / window.innerWidth ) * 2 - 1;
-    var mY = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
-    //这里定义深度值为0.5，深度值越大，意味着精度越高
-    var vector = new Vector3(mX, mY, 0.9 );
-    //将鼠标坐标转换为3D空间坐标
-    vector.unproject(camera);
-
-    //获得从相机指向鼠标所对应的3D空间点的射线（归一化）
-    vector.sub( camera.position ).normalize();
-    if( event.deltaY < 0 ){
-      camera.position.x += vector.x * factor;
-      camera.position.y += vector.y * factor;
-      camera.position.z += vector.z * factor;
-      controls.target.x += vector.x * factor;
-      controls.target.y += vector.y * factor;
-      controls.target.z += vector.z * factor;
-    } else{
-      camera.position.x -= vector.x * factor;
-      camera.position.y -= vector.y * factor;
-      camera.position.z -= vector.z * factor;
-      controls.target.x -= vector.x * factor;
-      controls.target.y -= vector.y * factor;
-      controls.target.z -= vector.z * factor;
-    }
-    // controls.update();
-  });
 })
 </script>
 

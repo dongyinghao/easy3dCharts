@@ -1,7 +1,57 @@
-import { Object3D, SpotLight, MeshLambertMaterial, TextureLoader, Vector3, Mesh, Path, Shape, ExtrudeGeometry,
-  ShapeGeometry, Group } from 'three';
-import { Coordinate } from './type.d';
-import {createText, drawLine, offset} from "@/utils/dpm";
+import {
+  Object3D, SpotLight, MeshLambertMaterial, TextureLoader, Vector3, Mesh, Path, Shape, ExtrudeGeometry,
+  ShapeGeometry, Group, PerspectiveCamera, Box3, BufferAttribute, BufferGeometry, Line, LineBasicMaterial, LineDashedMaterial
+} from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { Coordinate, LineOpt, Text } from './type.d';
+import { offset } from "@/utils/dpm";
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+
+// 文字创建
+export const createText = (data:Text, callback:any) => {
+  const loader = new FontLoader();
+  loader.load( '/fonts/XinGothicGB.json', fonts => {
+    const {font, size=3, height=0.5, x=0, y=0, z=0, rotate=0, color='#ffffff'} = data;
+    const textGeo:any = new TextGeometry( font, {
+      font: fonts,
+      size,
+      height,
+      curveSegments: 1,
+      bevelThickness: 1,
+    } );
+    textGeo.computeBoundingBox();
+    const textMaterial = new MeshLambertMaterial({ color });
+    const mesh = new Mesh( textGeo, textMaterial );
+    mesh.position.x = x;
+    mesh.position.y = y;
+    mesh.position.z = z;
+    mesh.rotateX(rotate);
+    // 获取字体的外轮廓，从而得到字体的长度
+    let box= new Box3().setFromObject(mesh);
+    // 字体对齐方式默认为左对齐，此处设为中心对齐
+    mesh.translateX(-(box.max.x - box.min.x) / 2);
+    mesh.translateY(-(box.max.y - box.min.y) / 2);
+    mesh.translateZ(-(box.max.z - box.min.z) / 2);
+    callback(mesh);
+  });
+}
+
+// 绘制一条直线
+export const drawLine = (array, opt?:LineOpt) => {
+  let material;
+  if (opt?.type === 'dashed') {
+    material = new LineDashedMaterial({color: opt ? opt.color : '#ffffff', dashSize: 1, gapSize: 2});
+  } else {
+    material = new LineBasicMaterial( {color: opt ? opt.color : '#ffffff'} );
+  }
+  const geometry = new BufferGeometry();
+  const vertice = new Float32Array( array );
+  geometry.setAttribute( 'position', new BufferAttribute( vertice, 3 ) );
+  const mesh = new Line( geometry, material );
+  mesh.computeLineDistances();
+  return mesh
+}
 
 // 创建聚光灯
 // @originPoint: 灯光位置， @targetPoint: 照射位置
@@ -18,40 +68,8 @@ export const createSpotLight = (originPoint:Coordinate, targetPoint:Coordinate, 
   return light;
 }
 
-// 根据相机高度获取当前的缩放因子
-export const ZtoZoom = (n:number):number => {
-  const zoomMap = {3: 1, 5: 2, 10: 3, 30: 4, 50: 5, 100: 6, 150: 7, 300: 8, 500: 9, 1000: 10, 1500: 11, 2000: 12, 2500: 13};
-  let prev = 1;
-  for(let key in zoomMap) {
-    let zoom = Number(key);
-    if (n <= zoom) {
-      const step = zoom - prev;
-      const diff = n - prev;
-      return zoomMap[zoom] + Number((diff / step).toFixed(1));
-    }
-    prev = zoom;
-  }
-  return 14
-}
-
-// 根据缩放因子获取相机高度
-export const ZoomToZ = (n:number):number => {
-  const zoomMap = {3: 1, 5: 2, 10: 3, 30: 4, 50: 5, 100: 6, 150: 7, 300: 8, 500: 9, 1000: 10, 1500: 11, 2000: 12, 2500: 13};
-  let prev = 1;
-  for(let key in zoomMap) {
-    let zoom = zoomMap[key];
-    if (n <= zoom) {
-      const step = zoom - n;
-      const diff = Number(key) - prev;
-      return Number(key) - Number((diff * step).toFixed(1));
-    }
-    prev = Number(key);
-  }
-  return 14
-}
-
 // 皮肤加载
-export const loadTexture = (url) => {
+export const loadTexture = (url:string):MeshLambertMaterial => {
   const load = new TextureLoader();
   const texture = load.load(url);
   return new MeshLambertMaterial({
@@ -60,7 +78,7 @@ export const loadTexture = (url) => {
 }
 
 // 根据鼠标位置缩放场景
-export const zoomByMouse = (camera, controls) => {
+export const zoomByMouse = (camera:PerspectiveCamera, controls:OrbitControls) => {
   document.body.addEventListener('mousewheel',  (event:any) =>{
     const factor = camera.position.z / 20;
     const x = ( event.clientX / window.innerWidth ) * 2 - 1;
@@ -80,7 +98,7 @@ export const zoomByMouse = (camera, controls) => {
 }
 
 // 绘制道路
-export const drawRoadPlane = (data, color, group?) => {
+export const drawRoadPlane = (data, color:string|number, group?:Group):Group => {
   const myGroup = new Group();
   data.features.forEach(it => {
     const arrayList = it.geometry.coordinates[0];
@@ -118,7 +136,7 @@ export const drawRoadPlane = (data, color, group?) => {
 }
 
 // 绘制道路中线
-export const drawRoadLine = (data, color, group?) => {
+export const drawRoadLine = (data, color:string|number, group?:Group):Group => {
   const myGroup = new Group();
   data.features.forEach(it => {
     const arrayList = it.geometry.coordinates[0];
@@ -135,7 +153,7 @@ export const drawRoadLine = (data, color, group?) => {
 }
 
 // 绘制河流湖泊
-export const drawRiver = (data, color, group?) => {
+export const drawRiver = (data, color:string|number, group?:Group):Group => {
   const myGroup = new Group();
   data.features.forEach(it => {
     const shape = new Shape();
@@ -172,7 +190,7 @@ export const drawRiver = (data, color, group?) => {
 }
 
 // 绘制建筑物
-export const drawBuild = (data, color, group?) => {
+export const drawBuild = (data, color:string|number, group?:Group):Group => {
   const myGroup = new Group();
   data.features.forEach(it => {
     const array = it.geometry.coordinates[0][0];
@@ -200,7 +218,7 @@ export const drawBuild = (data, color, group?) => {
 }
 
 // 绘制地图轮廓线
-export const drawMapLine = (data, color, group?) => {
+export const drawMapLine = (data, color:string|number, group?:Group):Group => {
   const myGroup = new Group();
   data.features.forEach(it => {
     if (!it.properties.name) return;
@@ -232,7 +250,7 @@ export const drawMapLine = (data, color, group?) => {
 }
 
 // 绘制地图
-export const drawMapPlane = (data, color, depth?, group?) => {
+export const drawMapPlane = (data, color:string|number, depth?:number, group?:Group):Group => {
   const myGroup = new Group();
   data.features.forEach(it => {
     if (!it.properties.name) return;
@@ -258,13 +276,13 @@ export const drawMapPlane = (data, color, depth?, group?) => {
 }
 
 // 绘制地图区域名称
-export const drawAreaName = (data, fs, color?, group?) => {
+export const drawAreaName = (data, fontSize:number, color?:string|number|undefined, group?:Group):Group => {
   const myGroup = new Group();
   data.features.forEach(it => {
     if (!it.properties.name) return;
     createText({
       font: it.properties.name,
-      size: fs,
+      size: fontSize,
       height: 0.3,
       x: it.properties.centroid[0] * 1000,
       y: it.properties.centroid[1] * 1000,
