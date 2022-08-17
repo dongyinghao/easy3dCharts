@@ -4,8 +4,9 @@
 <script lang="ts" setup>
 import {
   Scene, SphereGeometry, Group, Mesh, AmbientLight, DirectionalLight, PerspectiveCamera, Clock, DoubleSide, PlaneGeometry,
-  MeshStandardMaterial,BoxGeometry,OrthographicCamera,PointLight,PointLightHelper,Shape,ShapeGeometry,Box3, Vector3,
-  WebGLRenderer, AxesHelper, MeshLambertMaterial, Color, KeyframeTrack, AnimationClip, AnimationMixer, Object3D, SpotLight, SpotLightHelper, MeshPhongMaterial, DirectionalLightHelper
+  BoxGeometry,PointLight,PointLightHelper,Shape,ShapeGeometry,Box3, Vector3,EllipseCurve,LineBasicMaterial, Line,QuadraticBezierCurve3,CatmullRomCurve3,
+  WebGLRenderer, AxesHelper, MeshLambertMaterial, Color, KeyframeTrack, AnimationClip, AnimationMixer, Object3D, SpotLight,
+  SpotLightHelper, LineCurve3, DirectionalLightHelper, BufferGeometry,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -13,15 +14,6 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { offset } from "@/utils/dpm";
 import { drawLine, loadGlb } from "@/utils/tools";
 import {onMounted} from "vue";
-
-const builds = {
-  house0: loadGlb('/models/house0.glb'),
-  house1: loadGlb('/models/house1.glb'),
-  house2: loadGlb('/models/house2.glb'),
-  house3: loadGlb('/models/house3.glb'),
-  house4: loadGlb('/models/house4.glb'),
-  house5: loadGlb('/models/house5.glb'),
-}
 
 const scene:any = new Scene();
 const box:any = new Group();
@@ -126,7 +118,7 @@ const drawPlan = () => {
   plane.receiveShadow = true;
   scene.add( plane );
 }
-drawPlan();
+// drawPlan();
 
 const drawBox = () => {
   const geometry = new BoxGeometry( 20, 20, 20 );
@@ -136,7 +128,7 @@ const drawBox = () => {
   plane.castShadow = true;
   box.add( plane );
 }
-drawBox();
+// drawBox();
 
 const drawSphere = () => {
   const geometry = new SphereGeometry( 20, 22, 16 );
@@ -146,7 +138,7 @@ const drawSphere = () => {
   sphere.castShadow = true;
   box.add( sphere );
 }
-drawSphere();
+// drawSphere();
 
 const initAnimat  = () => {
   // 创建名为Box对象的关键帧数据
@@ -181,22 +173,21 @@ const animate = () => {
   // mixer.update(clock.getDelta());
 }
 
+const test = () => {
+  const curve = new QuadraticBezierCurve3(
+      new Vector3( -10, 0, 0 ),
+      new Vector3( 0, 15, 0 ),
+      new Vector3( 10, 0, 0 )
+  );
 
+  const points = curve.getPoints( 50 );
+  const geometry = new BufferGeometry().setFromPoints( points );
 
-
-
-const loadGlbs1 = async () => {
-  for(let i = 0; i < 6; i++) {
-    const a = await builds['house' + i]
-    const mesh = a.scene.clone();
-    mesh.position.x = 30 * i;
-    mesh.position.z = 30;
-    scene.add(mesh)
-  }
+  const material = new LineBasicMaterial( { color: 0xff0000 } );
+  const ellipse = new Line( geometry, material );
+  scene.add(ellipse);
 }
-
-loadGlbs1()
-
+test();
 
 onMounted(() => {
   init();

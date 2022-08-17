@@ -8,6 +8,7 @@ export const data = {
       "centroid": [108.406819, 30.704054],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 0,
       "acroutes": [100000, 500000]
@@ -25,6 +26,7 @@ export const data = {
       "centroid": [107.334026, 29.658582],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 1,
       "acroutes": [100000, 500000]
@@ -42,6 +44,7 @@ export const data = {
       "centroid": [106.540387, 29.549305],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 2,
       "acroutes": [100000, 500000]
@@ -59,6 +62,7 @@ export const data = {
       "centroid": [106.458637, 29.417574],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 3,
       "acroutes": [100000, 500000]
@@ -76,6 +80,7 @@ export const data = {
       "centroid": [106.707043, 29.613282],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 4,
       "acroutes": [100000, 500000]
@@ -93,6 +98,7 @@ export const data = {
       "centroid": [106.368248, 29.624462],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 5,
       "acroutes": [100000, 500000]
@@ -110,6 +116,7 @@ export const data = {
       "centroid": [106.364401, 29.428501],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 6,
       "acroutes": [100000, 500000]
@@ -127,6 +134,7 @@ export const data = {
       "centroid": [106.660614, 29.535521],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 7,
       "acroutes": [100000, 500000]
@@ -144,6 +152,7 @@ export const data = {
       "centroid": [106.513996, 29.861006],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 8,
       "acroutes": [100000, 500000]
@@ -161,6 +170,7 @@ export const data = {
       "centroid": [106.722706, 28.87864],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 9,
       "acroutes": [100000, 500000]
@@ -178,6 +188,7 @@ export const data = {
       "centroid": [105.742721, 29.65],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 10,
       "acroutes": [100000, 500000]
@@ -195,6 +206,7 @@ export const data = {
       "centroid": [106.746928, 29.810209],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 11,
       "acroutes": [100000, 500000]
@@ -212,6 +224,7 @@ export const data = {
       "centroid": [106.751731, 29.371851],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 12,
       "acroutes": [100000, 500000]
@@ -229,6 +242,7 @@ export const data = {
       "centroid": [108.708597, 29.435532],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 13,
       "acroutes": [100000, 500000]
@@ -246,6 +260,7 @@ export const data = {
       "centroid": [107.140018, 29.954649],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 14,
       "acroutes": [100000, 500000]
@@ -263,6 +278,7 @@ export const data = {
       "centroid": [106.263211, 29.029608],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 15,
       "acroutes": [100000, 500000]
@@ -280,6 +296,7 @@ export const data = {
       "centroid": [106.311538, 30.112474],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 16,
       "acroutes": [100000, 500000]
@@ -297,6 +314,7 @@ export const data = {
       "centroid": [105.872859, 29.290183],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 17,
       "acroutes": [100000, 500000]
@@ -314,6 +332,7 @@ export const data = {
       "centroid": [107.171436, 29.13547],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 18,
       "acroutes": [100000, 500000]
@@ -331,6 +350,7 @@ export const data = {
       "centroid": [106.191948, 29.561371],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 19,
       "acroutes": [100000, 500000]
@@ -348,6 +368,7 @@ export const data = {
       "centroid": [106.0332, 29.81109],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 20,
       "acroutes": [100000, 500000]
@@ -365,6 +386,7 @@ export const data = {
       "centroid": [105.814632, 30.143351],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 21,
       "acroutes": [100000, 500000]
@@ -382,6 +404,7 @@ export const data = {
       "centroid": [105.506727, 29.464817],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 22,
       "acroutes": [100000, 500000]
@@ -399,6 +422,7 @@ export const data = {
       "centroid": [108.382659, 31.271013],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 23,
       "acroutes": [100000, 500000]
@@ -416,6 +440,7 @@ export const data = {
       "centroid": [107.719234, 30.658344],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 24,
       "acroutes": [100000, 500000]
@@ -433,6 +458,7 @@ export const data = {
       "centroid": [107.709628, 29.373158],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 25,
       "acroutes": [100000, 500000]
@@ -450,6 +476,7 @@ export const data = {
       "centroid": [108.735105, 31.881846],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 26,
       "acroutes": [100000, 500000]
@@ -467,6 +494,7 @@ export const data = {
       "centroid": [107.830885, 29.884753],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 27,
       "acroutes": [100000, 500000]
@@ -484,6 +512,7 @@ export const data = {
       "centroid": [107.437814, 30.253308],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 28,
       "acroutes": [100000, 500000]
@@ -501,6 +530,7 @@ export const data = {
       "centroid": [107.914786, 30.335722],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 29,
       "acroutes": [100000, 500000]
@@ -518,6 +548,7 @@ export const data = {
       "centroid": [108.856912, 31.036349],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 30,
       "acroutes": [100000, 500000]
@@ -535,6 +566,7 @@ export const data = {
       "centroid": [109.349632, 30.952293],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 31,
       "acroutes": [100000, 500000]
@@ -552,6 +584,7 @@ export const data = {
       "centroid": [109.901246, 31.115189],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 32,
       "acroutes": [100000, 500000]
@@ -569,6 +602,7 @@ export const data = {
       "centroid": [109.35337, 31.503107],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 33,
       "acroutes": [100000, 500000]
@@ -586,6 +620,7 @@ export const data = {
       "centroid": [108.298494, 30.093676],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 34,
       "acroutes": [100000, 500000]
@@ -603,6 +638,7 @@ export const data = {
       "centroid": [109.018121, 28.491722],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 35,
       "acroutes": [100000, 500000]
@@ -620,6 +656,7 @@ export const data = {
       "centroid": [108.800321, 28.89987],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 36,
       "acroutes": [100000, 500000]
@@ -637,6 +674,7 @@ export const data = {
       "centroid": [108.266309, 29.353956],
       "childrenNum": 0,
       "level": "district",
+      "specialty": [''],
       "parent": {"adcode": 500000},
       "subFeatureIndex": 37,
       "acroutes": [100000, 500000]

@@ -7,27 +7,14 @@
 
 <script lang="ts" setup>
 import {
-  AmbientLight,
-  AxesHelper,
-  Box3,
-  Color,
-  DirectionalLight,
-  ExtrudeGeometry,
-  Group,
-  Mesh,
-  PCFSoftShadowMap,
-  PerspectiveCamera,
-  PointLight,
-  PointLightHelper,
-  Raycaster,
-  Scene,
-  Shape,
-  ShapeGeometry,
-  SpotLight,
-  SpotLightHelper,
-  Vector3,
-  WebGLRenderer,
-  Vector2,
+  AmbientLight, AxesHelper,
+  Box3, Color, DirectionalLight,
+  ExtrudeGeometry, Group, Mesh, PCFSoftShadowMap,
+  PerspectiveCamera, PointLight, PointLightHelper,
+  Raycaster, Scene, Shape,
+  BufferGeometry, Line, LineBasicMaterial,
+  ShapeGeometry, SpotLight, SpotLightHelper,
+  Vector3, WebGLRenderer, Vector2, QuadraticBezierCurve3,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 // import { MapControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -247,6 +234,7 @@ const animate = (event?) => {
 const initControls = () => {
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target = new Vector3(0,0,0);
+  controls.screenSpacePanning = false;
   controls.update();
   controls.addEventListener('change',throttle(() => {
     zoom = ZtoZoom(camera.position.z);
@@ -309,6 +297,17 @@ const drawRivers = (color) => {
   riverGroup.position.z = landDepth + 0.01;
   riverGroup.add(shapingba, banan, nanan, jiangjin, yubei, hechuan);
 }
+
+const test = (start,end, h) => {
+  const center = new Vector3((start.x + end.x) /2, (start.y + end.y) /2, 100 + h);
+  const curve = new QuadraticBezierCurve3(start, center, end);
+  const points = curve.getPoints( 50 );
+  const geometry = new BufferGeometry().setFromPoints( points );
+  const material = new LineBasicMaterial( { color: 0xff0000 } );
+  const ellipse = new Line( geometry, material );
+  group.add(ellipse);
+}
+test(new Vector3( 106.368248 * 1000, 29.624462 * 1000, 100 ), new Vector3( 106.540387 * 1000, 29.549305 * 1000, 100 ), 200);
 
 onMounted(() => {
   initRenderer();

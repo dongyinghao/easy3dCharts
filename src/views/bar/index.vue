@@ -551,12 +551,14 @@ const init = () => {
   axisHelper();
   c = generateParams(options);
   initControls(c);
-
   drawChart(options)
   renderer.render(scene, camera);
 };
 
 onMounted(() => {
+  document.addEventListener('test', (e) =>{
+    console.log(3333, e);
+  })
   init();
 })
 </script>

@@ -1,9 +1,17 @@
 <template>
-  <div class="tips" ref="tipsRef" v-html="tips"></div>
+  <div class="tips" ref="tipsRef" @click="clickHandle" v-html="tips"></div>
 </template>
 
 <script setup lang="ts">
-defineProps<{ tips: string }>()
+defineProps<{ tips: string }>();
+
+const clickHandle = () => {
+  document.dispatchEvent(
+      new CustomEvent("test", {
+        detail: {name: 'hello'}
+      })
+  )
+}
 </script>
 
 <style scoped lang="less">

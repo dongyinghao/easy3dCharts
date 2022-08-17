@@ -250,16 +250,21 @@ export const drawBuild = (data, color:string|number, group?:Group):Group => {
     const geometry = new ExtrudeGeometry(shape, {depth, bevelEnabled: false});
     const material = new MeshLambertMaterial({color});
     const mesh = new Mesh(geometry,material);
-    if(it.properties.name) {
-      let boxInfo = new Box3().setFromObject(mesh);
-      addBuild(it,[(boxInfo.min.x + boxInfo.max.x) / 2, (boxInfo.min.y + boxInfo.max.y) / 2], myGroup);
-    } else {
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.userData = it.properties;
-      if (group) group.add(mesh);
-      myGroup.add(mesh);
-    }
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.userData = it.properties;
+    if (group) group.add(mesh);
+    myGroup.add(mesh);
+    // if(it.properties.name) {
+    //   let boxInfo = new Box3().setFromObject(mesh);
+    //   addBuild(it,[(boxInfo.min.x + boxInfo.max.x) / 2, (boxInfo.min.y + boxInfo.max.y) / 2], myGroup);
+    // } else {
+    //   mesh.castShadow = true;
+    //   mesh.receiveShadow = true;
+    //   mesh.userData = it.properties;
+    //   if (group) group.add(mesh);
+    //   myGroup.add(mesh);
+    // }
   })
   return myGroup;
 }
