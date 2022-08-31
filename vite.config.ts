@@ -11,6 +11,7 @@ export default defineConfig({
   },
   server: {
     open:true,
+    host: '0.0.0.0',
     proxy: {
       // '/api': {
       //   target: 'http://222.180.171.210:8082/',

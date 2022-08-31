@@ -234,7 +234,7 @@ const animate = (event?) => {
 const initControls = () => {
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target = new Vector3(0,0,0);
-  controls.screenSpacePanning = false;
+  // controls.screenSpacePanning = false;
   controls.update();
   controls.addEventListener('change',throttle(() => {
     zoom = ZtoZoom(camera.position.z);
